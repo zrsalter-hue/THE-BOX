@@ -1,0 +1,50 @@
+{
+  "brand": {
+    "name": "The Box",
+    "byline": "by Still Point",
+    "footer": "A Still Point tool · Adapted from Zach Salter's Finance Office Field Manual"
+  },
+  "pricing": {
+    "single_card_cents": 200,
+    "single_card_label": "Unlock this card",
+    "single_card_display": "$2",
+    "unlimited_cents": 4900,
+    "unlimited_label": "Get unlimited",
+    "unlimited_display": "$49",
+    "currency": "USD",
+    "note": "Set these prices here. The UI reads single_card_display and unlimited_display for the button labels. The cents values are what you will wire into Stripe later. They are not used to compute UI text."
+  },
+  "paywall": {
+    "default_locked": true,
+    "show_preview_mode_toggle": false,
+    "preview_mode_query_param": "preview",
+    "teaser_words": 14,
+    "free_unlocks": 3,
+    "stripe_publishable_key": "pk_live_51T82ZBRwoPVSX9sdlgsv2VSo88QeN2xriBeiZBnCQynrYV7aMtxpiqQYdPqtpEBBwCcLuQuFRhG9FlwhPdwcdKtX00zBHJZBst",
+    "stripe_single_price_id": "",
+    "stripe_unlimited_price_id": ""
+  },
+  "access": {
+    "owner_emails": [
+      "zrsalter@gmail.com"
+    ],
+    "founder_passes": [
+      {
+        "email": "founder@example.com",
+        "expires": "2026-06-30",
+        "note": "Replace this with a real founder email. Use YYYY-MM-DD for a timed free pass."
+      }
+    ],
+    "instructions": "To give a founder free access, add a new object to founder_passes with their email and an expires date. Leave expires blank for no expiration."
+  },
+  "chips": [
+    "GAP",
+    "Service Contract",
+    "Cash buyer",
+    "Think about it",
+    "Talk to spouse",
+    "Payment too high",
+    "Lease",
+    "Don't trust"
+  ]
+}

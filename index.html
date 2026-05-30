@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <meta name="description" content="The Box by Still Point. A fast, calm F&I objection tool. Find the right answer in seconds. Adapted from Zach Salter's Finance Office Field Manual." />
+  <meta property="og:title" content="The Box by Still Point" />
+  <meta property="og:description" content="Read the resistance. Choose the calm, clear move. A Still Point F&I tool." />
+  <meta property="og:type" content="website" />
+  <title>The Box · by Still Point</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=still-point-gate-1" />
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+</head>
+<body class="gate-active">
+  <a class="skip-link" href="#search">Skip to search</a>
+
+  <section class="gate" id="gate" aria-labelledby="gateTitle">
+    <div class="gate-shell">
+      <div class="gate-brand">
+        <img class="gate-bull" src="assets/gold_bull.png" alt="" width="154" height="154" />
+        <h1 id="gateTitle" class="box-wordmark">THE BOX</h1>
+        <p class="script-byline">by Still Point</p>
+        <p class="gate-line">Every objection has an answer. This is where you find it.<br /><span class="gate-line-sub">F&amp;I Managers only.</span></p>
+      </div>
+
+      <form class="auth-card" id="gateForm" autocomplete="off">
+        <div class="auth-tabs" role="tablist" aria-label="Access options">
+          <button type="button" class="auth-tab active" data-enter-app role="tab" aria-selected="true">Sign in</button>
+          <button type="button" class="auth-tab" data-enter-app role="tab" aria-selected="false">Register</button>
+        </div>
+
+        <label class="auth-field">
+          <span>Email</span>
+          <input id="loginEmail" type="email" autocomplete="email" placeholder="name@dealership.com" />
+        </label>
+
+        <label class="auth-field">
+          <span>Password</span>
+          <input id="loginPassword" type="password" autocomplete="current-password" placeholder="••••••••" />
+        </label>
+
+        <button type="submit" class="auth-primary">Sign In</button>
+
+        <div class="auth-divider"><span>or</span></div>
+
+        <button type="button" class="auth-google" data-enter-app>Continue with Google</button>
+        <p class="auth-switch">New here? <button type="button" data-enter-app>Create an account.</button></p>
+      </form>
+
+      <p class="gate-foot">A Still Point tool. Adapted from Zach Salter's Finance Office Field Manual</p>
+    </div>
+  </section>
+
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <a href="#" class="brand" aria-label="The Box, by Still Point">
+        <img class="mark brand-bull" src="assets/gold_bull.png" alt="" width="34" height="34" />
+        <span class="brand-stack">
+          <span class="brand-name">The Box</span>
+          <span class="brand-byline">by Still Point</span>
+        </span>
+      </a>
+    </div>
+  </header>
+
+  <main class="wrap main">
+    <section class="hero app-hero" aria-labelledby="hero-title">
+      <div class="app-lockup">
+        <img class="app-bull" src="assets/gold_bull.png" alt="" width="132" height="132" />
+        <h1 id="hero-title" class="box-wordmark app-title">THE BOX</h1>
+        <p class="script-byline app-byline">by Still Point</p>
+        <p class="hero-sub">The execution layer for the finance office.</p>
+        <nav class="toolbar hero-tools" aria-label="Training tools">
+          <button type="button" class="tool" id="btnHowto">HOW TO USE</button>
+          <button type="button" class="tool" id="btnSignals">STATE-BASED CLOSE MATRIX</button>
+        </nav>
+      </div>
+    </section>
+
+    <section class="searchcard" id="search" aria-label="Search objections">
+      <form class="searchbar" id="searchForm" role="search" autocomplete="off">
+        <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input
+          id="q"
+          type="text"
+          inputmode="search"
+          autocomplete="off"
+          autocapitalize="off"
+          spellcheck="false"
+          placeholder="Type the objection here"
+          aria-label="Type the objection here"
+        />
+        <button type="button" class="clearbtn" id="clearBtn" aria-label="Clear search" hidden>Clear</button>
+      </form>
+      <div class="chips" id="chips" role="group" aria-label="Quick searches"></div>
+      <p class="search-meta" id="searchMeta" aria-live="polite"></p>
+    </section>
+
+    <section class="results" id="results" aria-live="polite" aria-busy="false"></section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <p class="footline">A Still Point tool. Adapted from Zach Salter's Finance Office Field Manual</p>
+      <p class="access-status" id="accessStatus" hidden></p>
+      <button type="button" class="preview-toggle" id="previewToggle" aria-pressed="false" title="Preview mode unlocks the answer view for demo only. No real payment.">Preview mode: off</button>
+    </div>
+  </footer>
+
+  <!-- Paywall modal -->
+  <div class="overlay" id="payOverlay" role="dialog" aria-modal="true" aria-labelledby="payTitle" hidden>
+    <div class="modal modal-pay">
+      <div class="mhead">
+        <h2 id="payTitle">Get the whole Box</h2>
+        <button type="button" class="x" data-close aria-label="Close">×</button>
+      </div>
+      <div class="mbody">
+        <p class="pay-lead" id="payLead">You've used your 3 free unlocks. Unlock every move — forever — with one payment.</p>
+        <div class="pay-options">
+          <button type="button" class="pay-btn pay-unlim" id="payUnlimited">
+            <span class="pay-label">Get unlimited access</span>
+            <span class="pay-price" id="payUnlimitedPrice">$49</span>
+          </button>
+        </div>
+        <span id="paySinglePrice" hidden></span>
+        <button type="button" class="preview-unlock" id="previewUnlock" hidden>Preview unlock (owner only)</button>
+        <p class="pay-foot">Secure checkout by Stripe. One-time payment unlocks all moves on this device.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- How to use modal -->
+  <div class="overlay" id="howtoOverlay" role="dialog" aria-modal="true" aria-labelledby="howtoTitle" hidden>
+    <div class="modal modal-training">
+      <div class="mhead">
+        <h2 id="howtoTitle">How to use The Box</h2>
+        <button type="button" class="x" data-close aria-label="Close">×</button>
+      </div>
+      <div class="mbody">
+        <section class="training-section">
+          <h3>What this is</h3>
+          <p><strong>Still Point</strong> is a diagnostic training system built to help finance managers hear what is actually driving resistance before they decide what to say. It turns an objection from something you react to into something you can read, control, and move through with precision.</p>
+          <p><strong>The Box</strong> gives you that thinking in a live moment by pulling fast response routes from the manual when you need a way to go.</p>
+        </section>
+
+        <section class="training-section">
+          <h3>How to coach the moment</h3>
+          <p>Think of this less like a script and more like a coach in your corner. When your customer pushes back, do not rush to answer. Type what they actually said and let The Box hand you a calm, neutral transition.</p>
+          <p>Know your customer first. If the resistance is emotional, stay soft and reframe in a relaxed, calm tone. If the resistance is logical, use the context to shift opinion into structure.</p>
+          <p>The goal is to help them see the right decision for themselves and make it feel like they made it themselves. You are not trying to convince. You are using words that provoke a more practical choice.</p>
+        </section>
+
+        <section class="training-section">
+          <h3>Delivery tone</h3>
+          <p class="howto-tone">
+            <span class="tone-pill">calm</span>
+            <span class="tone-pill">neutral</span>
+            <span class="tone-pill">professional</span>
+            <span class="tone-pill">no justification</span>
+            <span class="tone-pill">no rushing</span>
+          </p>
+        </section>
+
+        <section class="training-section">
+          <h3>Closing principles</h3>
+          <ul class="principles-list">
+            <li>Remove the confusion with absolute clarity. Clarity closes.</li>
+            <li>The moment they answer a question, they are participating in your show. The quality of the questions controls the conversation.</li>
+            <li>Silence is a tool. After the final question, stop talking.</li>
+            <li>Pressure breaks trust.</li>
+            <li>You make the unpredictable feel predictable and cost-efficient.</li>
+            <li>Ownership is math. The longer they own it, the more expensive it can get.</li>
+            <li>Your job is to converse with the customer so they can make a clear choice.</li>
+          </ul>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- Signal Reading modal -->
+  <div class="overlay" id="signalsOverlay" role="dialog" aria-modal="true" aria-labelledby="signalsTitle" hidden>
+    <div class="modal modal-training">
+      <div class="mhead">
+        <h2 id="signalsTitle">State-Based Close Matrix</h2>
+        <button type="button" class="x" data-close aria-label="Close">×</button>
+      </div>
+      <div class="mbody">
+        <p class="signals-intro">These are resistance states. Your job is to hear what is actually causing the objection. That tells you what kind of buyer they are and the direction you need to take them.</p>
+        <ul class="state-list">
+          <li>
+            <h3>Control / Ego</h3>
+            <p>This buyer is protecting identity, not evaluating product. They need to feel untouched, unboxed, and still in charge of the decision.</p>
+            <div class="state-move"><span>The move</span>Do not fight their control. Leave their identity intact and position the product as backup, not surrender.</div>
+          </li>
+          <li>
+            <h3>Fear / Anxious</h3>
+            <p>This buyer is not saying no because they are sure. They are saying no because they are scared of making the wrong move and want distance from the tension.</p>
+            <div class="state-move"><span>The move</span>Do not flood them with more information. Calm the moment, narrow the decision, and make them choose which regret is actually worse.</div>
+          </li>
+          <li>
+            <h3>Skeptic / Distrust</h3>
+            <p>This buyer is defending against getting played. They are not just doubting the product; they are doubting your agenda and looking for proof that you are hiding something.</p>
+            <div class="state-move"><span>The move</span>Drop the sales posture. Lead with what it does not do, remove the feeling of trap, and let transparency do the heavy lifting.</div>
+          </li>
+          <li>
+            <h3>Efficient / Analytical</h3>
+            <p>This buyer wants to move fast, stay sharp, and avoid wasted motion. They usually hide behind logic, but what they really want is a decision that feels clean and controlled.</p>
+            <div class="state-move"><span>The move</span>Do not slow them down with fluff. Redefine efficiency so the smart move becomes the one that protects against disorder, surprise, and uncontrolled cost later.</div>
+          </li>
+          <li>
+            <h3>Optimist / Risk-Denier</h3>
+            <p>This buyer is living in the comfort of "that probably won't happen." They are not doing math; they are using distance from the problem as a reason to dismiss it.</p>
+            <div class="state-move"><span>The move</span>Do not argue probability. Move the conversation from whether it happens to who owns it if it does.</div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+<script data-pplx-inline-edit>
+(function () {
+  if (window === window.top) return;
+
+  const allowedParentOrigins = ["https://www.perplexity.ai","https://perplexity.ai","https://testing.perplexity.ai","https://staging.perplexity.ai","https://*.preview.i.perplexity.ai","http://localhost:3000","http://127.0.0.1:3000","http://localhost:5173","http://127.0.0.1:5173"];
+  const MAX_FONT_BYTES = 500 * 1024;
+  const MAX_TOTAL_FONT_BYTES = 2 * 1024 * 1024;
+  let scrollForwarding = false;
+  let scrollRaf = 0;
+  let trustedTopOrigin = null;
+
+  // Allow entries like "https://*.preview.i.perplexity.ai" — the wildcard
+  // matches a single DNS label (no dots), so "https://*.foo" cannot stretch
+  // across multiple labels.
+  function matchesAllowedOrigin(origin) {
+    if (!origin) return false;
+    for (const entry of allowedParentOrigins) {
+      if (!entry.includes("*")) {
+        if (entry === origin) return true;
+        continue;
+      }
+      const pattern = new RegExp(
+        "^" +
+          entry.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[^.]+") +
+          "$",
+      );
+      if (pattern.test(origin)) return true;
+    }
+    return false;
+  }
+
+  // Trust decision: when the sender is same-origin-visible (event.origin is a
+  // real origin like https://www.perplexity.ai) we trust event.origin directly.
+  // When event.origin is "null" (opaque broker srcdoc), we fall back to the
+  // broker's stamped `parentOrigin` to identify the top window. The fallback
+  // is claim-only — we rely on the browser's native `targetOrigin` enforcement
+  // on the response path (see postToTrustedTop) to ensure replies can't be
+  // delivered to anyone but the actual top window of that claimed origin.
+  function getTrustedParentOrigin(event) {
+    const forwardedParentOrigin =
+      typeof event.data.parentOrigin === "string" ? event.data.parentOrigin : null;
+    const parentOrigin = event.origin === "null" ? forwardedParentOrigin : event.origin;
+    return matchesAllowedOrigin(parentOrigin) ? parentOrigin : null;
+  }
+
+  // All responses go to window.top with targetOrigin = the allowlisted origin.
+  // An attacker that iframes us inside their own null-origin broker can claim
+  // any parentOrigin they like, but the browser will drop the reply whenever
+  // the real top's origin doesn't match — so the screenshot never leaves.
+  function postToTrustedTop(message) {
+    if (!trustedTopOrigin) return;
+    try {
+      window.top.postMessage(message, trustedTopOrigin);
+    } catch (_error) {}
+  }
+
+  function inlineAll(original, clone) {
+    if (original.nodeType !== 1 || clone.nodeType !== 1) return;
+
+    try {
+      const computedStyle = getComputedStyle(original);
+      // cssText on a computed style is the serialized declaration in modern
+      // Chromium/Safari — a single read beats enumerating ~400 longhand
+      // properties. Firefox returns "" here, so we fall back on empty.
+      const serialized = computedStyle.cssText;
+      if (serialized) {
+        clone.style.cssText = serialized;
+      } else {
+        const parts = new Array(computedStyle.length);
+        for (let index = 0; index < computedStyle.length; index += 1) {
+          const property = computedStyle[index];
+          parts[index] = `${property}:${computedStyle.getPropertyValue(property)};`;
+        }
+        clone.style.cssText = parts.join("");
+      }
+    } catch (_error) {}
+
+    const originalChildren = original.children;
+    const clonedChildren = clone.children;
+    for (
+      let index = 0;
+      index < originalChildren.length && index < clonedChildren.length;
+      index += 1
+    ) {
+      inlineAll(originalChildren[index], clonedChildren[index]);
+    }
+  }
+
+  function extractFontUrl(srcValue) {
+    const matches = [
+      ...srcValue.matchAll(
+        /url\(["']?([^"')]+)["']?\)(?:\s*format\(["']?([^"')]+)["']?\))?/gi,
+      ),
+    ];
+    if (matches.length === 0) return null;
+    const woff2 = matches.find((m) => m[2] && m[2].toLowerCase().includes("woff2"));
+    if (woff2) return woff2[1];
+    const woff = matches.find((m) => m[2] && m[2].toLowerCase().includes("woff"));
+    if (woff) return woff[1];
+    return matches[0][1];
+  }
+
+  // Cache resolved font URL -> data URI across captures. Fonts on a page
+  // essentially never change, and a batch run emits multiple captures back to
+  // back — without this we'd refetch + re-base64 every time.
+  const fontDataUriCache = new Map();
+  const SRC_DECLARATION_RE = /src\s*:\s*[^;}]+/i;
+
+  async function fetchAsDataUri(url) {
+    if (fontDataUriCache.has(url)) return fontDataUriCache.get(url);
+    let dataUri = null;
+    try {
+      const response = await fetch(url, { mode: "cors", credentials: "omit" });
+      if (response.ok) {
+        const blob = await response.blob();
+        if (blob.size <= MAX_FONT_BYTES) {
+          dataUri = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () =>
+              resolve(typeof reader.result === "string" ? reader.result : null);
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(blob);
+          });
+        }
+      }
+    } catch (_error) {
+      dataUri = null;
+    }
+    fontDataUriCache.set(url, dataUri);
+    return dataUri;
+  }
+
+  function collectFontFaceRuleTexts() {
+    const rules = [];
+    for (const sheet of document.styleSheets) {
+      let cssRules;
+      try {
+        cssRules = sheet.cssRules;
+      } catch (_error) {
+        continue;
+      }
+      if (!cssRules) continue;
+      for (const rule of cssRules) {
+        const cssText = rule.cssText || "";
+        if (cssText.startsWith("@font-face")) rules.push(cssText);
+      }
+    }
+    return rules;
+  }
+
+  async function buildInlinedFontCss() {
+    const ruleTexts = collectFontFaceRuleTexts();
+    if (ruleTexts.length === 0) return null;
+
+    const resolved = ruleTexts.map((cssText) => {
+      if (!SRC_DECLARATION_RE.test(cssText)) return null;
+      const srcMatch = cssText.match(/src\s*:\s*([^;}]+)[;}]/i);
+      if (!srcMatch) return null;
+      const url = extractFontUrl(srcMatch[1]);
+      if (!url) return null;
+      try {
+        return { cssText, url: new URL(url, document.baseURI).href };
+      } catch (_error) {
+        return null;
+      }
+    });
+
+    const dataUris = await Promise.all(
+      resolved.map((entry) => (entry ? fetchAsDataUri(entry.url) : Promise.resolve(null))),
+    );
+
+    const inlined = [];
+    let totalBytes = 0;
+    for (let index = 0; index < resolved.length; index += 1) {
+      const entry = resolved[index];
+      const dataUri = dataUris[index];
+      if (!entry || !dataUri) continue;
+      const approxBytes = dataUri.length * 0.75;
+      if (totalBytes + approxBytes > MAX_TOTAL_FONT_BYTES) break;
+      totalBytes += approxBytes;
+      inlined.push(entry.cssText.replace(SRC_DECLARATION_RE, `src: url("${dataUri}")`));
+    }
+    return inlined.length > 0 ? inlined.join("\n") : null;
+  }
+
+  function stripExternal(clone) {
+    const images = clone.querySelectorAll("img");
+    for (let index = 0; index < images.length; index += 1) {
+      const src = images[index].getAttribute("src");
+      if (src && !src.startsWith("data:")) images[index].removeAttribute("src");
+    }
+
+    const elements = clone.querySelectorAll("*");
+    for (let index = 0; index < elements.length; index += 1) {
+      const style = elements[index].style.cssText;
+      if (style && style.includes("url(")) {
+        elements[index].style.cssText = style.replace(
+          /url\(["']?(?!data:)[^)"']*["']?\)/gi,
+          "none",
+        );
+      }
+    }
+  }
+
+  function emitScroll() {
+    scrollRaf = 0;
+    if (!scrollForwarding) return;
+    postToTrustedTop({
+      type: "INLINE_EDIT_SCROLL",
+      scrollX: window.scrollX,
+      scrollY: window.scrollY,
+    });
+  }
+
+  window.addEventListener(
+    "scroll",
+    function () {
+      if (!scrollForwarding || scrollRaf) return;
+      scrollRaf = requestAnimationFrame(emitScroll);
+    },
+    { passive: true, capture: true },
+  );
+
+  async function handleCaptureRequest(event) {
+    const requestId = event.data.requestId;
+    const scrollX = window.scrollX;
+    const scrollY = window.scrollY;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    function postResult(dataUrl) {
+      postToTrustedTop({
+        type: "INLINE_EDIT_SCREENSHOT_RESULT",
+        requestId,
+        dataUrl,
+        scrollX,
+        scrollY,
+      });
+    }
+
+    try {
+      // Wait for any pending web fonts to resolve so both inline metrics and
+      // the @font-face inlining below see the same loaded faces.
+      if (document.fonts && document.fonts.ready) {
+        try {
+          await document.fonts.ready;
+        } catch (_error) {}
+      }
+
+      const clone = document.documentElement.cloneNode(true);
+      inlineAll(document.documentElement, clone);
+
+      const removedNodes = clone.querySelectorAll("script,link[rel=\"stylesheet\"],style");
+      for (let index = 0; index < removedNodes.length; index += 1) {
+        removedNodes[index].remove();
+      }
+
+      stripExternal(clone);
+
+      // Re-embed web fonts as data-URI @font-face rules so the SVG rasterizer
+      // can resolve them — external font URLs aren't fetched during
+      // foreignObject rendering, which would otherwise force a fallback face
+      // and change text metrics.
+      const inlinedFontCss = await buildInlinedFontCss();
+      if (inlinedFontCss) {
+        const styleEl = document.createElement("style");
+        styleEl.textContent = inlinedFontCss;
+        const head = clone.querySelector("head");
+        if (head) head.appendChild(styleEl);
+        else clone.insertBefore(styleEl, clone.firstChild);
+      }
+
+      const html = new XMLSerializer().serializeToString(clone);
+      const svg =
+        `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">` +
+        '<foreignObject width="100%" height="100%">' +
+        `<div xmlns="http://www.w3.org/1999/xhtml" style="width:${width}px;height:${height}px;overflow:hidden">` +
+        `<div style="position:relative;left:-${scrollX}px;top:-${scrollY}px">` +
+        html +
+        "</div></div></foreignObject></svg>";
+      const svgUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+      const image = new Image();
+      image.onload = function () {
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext("2d").drawImage(image, 0, 0);
+        postResult(canvas.toDataURL("image/png"));
+      };
+      image.onerror = function () {
+        postResult(null);
+      };
+      image.src = svgUrl;
+    } catch (_error) {
+      postResult(null);
+    }
+  }
+
+  window.addEventListener("message", function (event) {
+    if (!event.data) return;
+    // Only accept messages from the direct parent frame. Blocks sibling /
+    // unrelated-window postMessage senders that could otherwise reach us.
+    if (event.source !== window.parent) return;
+
+    const trustedParentOrigin = getTrustedParentOrigin(event);
+    if (!trustedParentOrigin) return;
+    trustedTopOrigin = trustedParentOrigin;
+
+    if (event.data.type === "INLINE_EDIT_SCROLL_START") {
+      scrollForwarding = true;
+      emitScroll();
+      return;
+    }
+
+    if (event.data.type === "INLINE_EDIT_SCROLL_STOP") {
+      scrollForwarding = false;
+      if (scrollRaf) cancelAnimationFrame(scrollRaf);
+      scrollRaf = 0;
+      return;
+    }
+
+    if (event.data.type !== "INLINE_EDIT_CAPTURE_REQUEST") return;
+
+    handleCaptureRequest(event);
+  });
+})();
+
+
+</script></body>
+</html>

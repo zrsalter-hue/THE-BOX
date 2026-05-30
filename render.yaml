@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: the-box
+    runtime: node
+    plan: starter
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /api/stripe/status
+    disk:
+      name: thebox-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: DB_PATH
+        value: /var/data/data.db
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: PUBLIC_URL
+        sync: false
