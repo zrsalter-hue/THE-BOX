@@ -1,0 +1,516 @@
+{
+  "C-01": [
+    "i don't trust finance managers",
+    "don't trust the finance guy",
+    "don't trust f&i",
+    "finance office games"
+  ],
+  "C-02": [
+    "i feel like i'm being sold",
+    "feels like a sales pitch",
+    "you're selling me",
+    "being sold to"
+  ],
+  "C-03": [
+    "you're just trying to upsell me",
+    "this is an upsell",
+    "trying to add stuff",
+    "padding the deal"
+  ],
+  "C-04": [
+    "i don't believe these products really work",
+    "does this even work",
+    "do these products actually work",
+    "is this stuff legit"
+  ],
+  "C-05": [
+    "i've heard bad stories",
+    "heard bad things about this",
+    "people warned me",
+    "heard horror stories"
+  ],
+  "C-06": [
+    "i don't trust contracts",
+    "contracts scare me",
+    "don't trust the fine print"
+  ],
+  "C-07": [
+    "i don't want to be taken advantage of",
+    "don't want to get ripped off",
+    "don't want to get screwed",
+    "feel like i'm getting played"
+  ],
+  "C-08": [
+    "i want to read everything myself",
+    "let me read it first",
+    "i'll read the whole thing",
+    "need to read every word"
+  ],
+  "C-09": [
+    "i don't like surprises",
+    "no hidden fees",
+    "don't surprise me later"
+  ],
+  "C-10": [
+    "i don't want to feel manipulated",
+    "don't manipulate me",
+    "feels manipulative",
+    "don't pressure me into it"
+  ],
+  "C-11": [
+    "i've had bad experiences before",
+    "got burned before",
+    "bad experience last time"
+  ],
+  "C-12": [
+    "i don't believe what i'm being told",
+    "not sure i believe you",
+    "sounds too good to be true"
+  ],
+  "C-13": [
+    "this feels like it benefits you more than me",
+    "you make money on this",
+    "what's in it for you",
+    "this helps you not me"
+  ],
+  "C-14": [
+    "i have my own guy",
+    "i've got my own people",
+    "i have my own finance guy",
+    "i trust my own guy"
+  ],
+  "C-15": [
+    "i just want honesty",
+    "just be straight with me",
+    "just give it to me straight",
+    "i want the truth"
+  ],
+  "G-01": [
+    "i'm a good driver",
+    "i don't need gap",
+    "i never crash",
+    "i'm a safe driver"
+  ],
+  "G-02": [
+    "my insurance already covers that",
+    "insurance has me covered",
+    "my insurance handles that",
+    "isn't that what insurance is for"
+  ],
+  "G-03": [
+    "i'm putting money down",
+    "i have a big down payment",
+    "i put enough down",
+    "my down payment covers it"
+  ],
+  "G-04": [
+    "i've never needed gap before",
+    "never had gap",
+    "never needed it before"
+  ],
+  "G-05": [
+    "i don't like extra insurance",
+    "don't want more insurance",
+    "too much insurance already"
+  ],
+  "G-06": [
+    "i'll take my chances",
+    "i'll risk it",
+    "i'll roll the dice"
+  ],
+  "G-07": [
+    "i don't plan on totaling it",
+    "i won't total it",
+    "not going to wreck it"
+  ],
+  "G-08": [
+    "i'm careful",
+    "i'm a careful driver",
+    "i drive carefully"
+  ],
+  "G-09": [
+    "i don't want to pay for something i might not use",
+    "might never use it",
+    "what if i never need it"
+  ],
+  "G-10": [
+    "i self insure",
+    "i cover myself",
+    "i'm my own insurance"
+  ],
+  "G-11": [
+    "i don't want to overdo it",
+    "don't want to go overboard",
+    "that's too much"
+  ],
+  "G-12": [
+    "i trust my insurance company",
+    "my insurance is good",
+    "my carrier will handle it"
+  ],
+  "G-13": [
+    "i'll just pay the difference",
+    "i'll cover the gap myself",
+    "i'll pay whatever's left"
+  ],
+  "G-14": [
+    "i don't think i'll need it",
+    "probably won't need it",
+    "doubt i'll use it"
+  ],
+  "G-15": [
+    "i'd rather save the money",
+    "save the money instead",
+    "keep the cash"
+  ],
+  "L-01": [
+    "i'm leasing i don't need protection",
+    "it's a lease why protect it",
+    "leasing don't need coverage"
+  ],
+  "L-02": [
+    "the lease is short",
+    "short lease nothing will happen",
+    "only a couple years"
+  ],
+  "L-03": [
+    "i'll just fix it if something happens",
+    "i'll fix it myself",
+    "i'll repair it if needed"
+  ],
+  "L-04": [
+    "the money factor is already high",
+    "money factor too high",
+    "lease rate is high"
+  ],
+  "L-05": [
+    "i'm trading it before anything happens",
+    "trading it in early",
+    "i'll trade out"
+  ],
+  "L-06": [
+    "i don't drive much",
+    "low mileage",
+    "barely drive it",
+    "i hardly drive"
+  ],
+  "L-07": [
+    "i don't want to add costs to a lease",
+    "no extra cost on the lease",
+    "keep the lease cheap"
+  ],
+  "L-08": [
+    "wear and tear won't be an issue",
+    "no wear and tear",
+    "won't have any damage"
+  ],
+  "L-09": [
+    "i'm careful with my cars",
+    "i take care of my cars",
+    "i baby my cars"
+  ],
+  "L-10": [
+    "i don't keep leased cars long",
+    "i turn leases in fast",
+    "short term lease"
+  ],
+  "L-11": [
+    "i'll worry about it at lease end",
+    "deal with it at turn in",
+    "handle it at lease end"
+  ],
+  "L-12": [
+    "i don't want to pay for something i won't own",
+    "why pay if i don't own it",
+    "not my car anyway"
+  ],
+  "L-13": [
+    "the lease already covers me",
+    "lease includes coverage",
+    "isn't it covered in the lease"
+  ],
+  "L-14": [
+    "i don't want to complicate the lease",
+    "keep the lease simple",
+    "don't complicate it"
+  ],
+  "L-15": [
+    "i've leased before and never had issues",
+    "leased before no problems",
+    "never had lease issues"
+  ],
+  "P-01": [
+    "i don't want to put any money down",
+    "no money down",
+    "zero down",
+    "nothing down"
+  ],
+  "P-02": [
+    "the payment is higher than i expected",
+    "payment's too high",
+    "that payment is a lot",
+    "monthly is too much"
+  ],
+  "P-03": [
+    "the rate feels high",
+    "interest rate is high",
+    "the apr is high",
+    "that's a high rate"
+  ],
+  "P-04": [
+    "i don't want a long term",
+    "too many months",
+    "don't want 72 months",
+    "i want a short term"
+  ],
+  "P-05": [
+    "i'm fine taking my chances",
+    "i'll chance it",
+    "i'll risk it"
+  ],
+  "P-06": [
+    "i'm just going to pay cash",
+    "paying cash",
+    "i'll pay in cash",
+    "cash deal"
+  ],
+  "P-07": [
+    "i don't want to finance extras",
+    "don't roll it into the loan",
+    "don't want to finance add-ons"
+  ],
+  "P-08": [
+    "i'll decide later",
+    "decide later",
+    "not deciding now"
+  ],
+  "P-09": [
+    "i don't want to stretch my payment",
+    "don't stretch the payment",
+    "keep payment where it is"
+  ],
+  "P-10": [
+    "i'll just handle it if something comes up",
+    "i'll deal with it later",
+    "cross that bridge later"
+  ],
+  "P-11": [
+    "i don't like paying for what-ifs",
+    "paying for what ifs",
+    "don't pay for maybes"
+  ],
+  "P-12": [
+    "i'll just use savings if i need to",
+    "i'll dip into savings",
+    "i'll use my savings"
+  ],
+  "P-13": [
+    "i don't want my payment to go up",
+    "keep my payment the same",
+    "don't raise my payment"
+  ],
+  "P-14": [
+    "i'm trying to keep things simple",
+    "keep it simple",
+    "just keep it basic"
+  ],
+  "P-15": [
+    "a lot of money for a service contract",
+    "service contract costs too much",
+    "don't see the value in the contract"
+  ],
+  "T-01": [
+    "i need to think about it",
+    "let me think about it",
+    "i want to think it over",
+    "i need to pray about it",
+    "let me pray about it",
+    "pray on it"
+  ],
+  "T-02": [
+    "i don't want to decide today",
+    "not deciding today",
+    "not today",
+    "talk to my wife",
+    "talk to my husband",
+    "talk to my spouse",
+    "ask my wife",
+    "ask my husband",
+    "need to ask my partner",
+    "talk to my partner"
+  ],
+  "T-03": [
+    "i want to sleep on it",
+    "let me sleep on it",
+    "i'll sleep on it"
+  ],
+  "T-04": [
+    "i'll decide later",
+    "decide later",
+    "later"
+  ],
+  "T-05": [
+    "can i add this later",
+    "add it later",
+    "can i get it later",
+    "buy it later"
+  ],
+  "T-06": [
+    "i want to think it through with someone else",
+    "talk to my wife",
+    "talk to my husband",
+    "talk to my spouse",
+    "ask my wife",
+    "ask my partner",
+    "run it by my spouse"
+  ],
+  "T-07": [
+    "i don't want to rush",
+    "don't rush me",
+    "no rush",
+    "i don't want to rush into it"
+  ],
+  "T-08": [
+    "i'll call you if i change my mind",
+    "i'll call you later",
+    "i'll get back to you"
+  ],
+  "T-09": [
+    "i'm not ready to decide",
+    "not ready yet",
+    "i'm not ready"
+  ],
+  "T-10": [
+    "i need more time",
+    "give me more time",
+    "i need time"
+  ],
+  "T-11": [
+    "i don't want to feel pressured",
+    "don't pressure me",
+    "feeling pressured",
+    "no pressure"
+  ],
+  "T-12": [
+    "i'll decide after i drive it for a while",
+    "after i drive it",
+    "once i've driven it"
+  ],
+  "T-13": [
+    "i want to research it",
+    "let me do my research",
+    "i need to research",
+    "i want to look it up"
+  ],
+  "T-14": [
+    "i don't like making decisions on the spot",
+    "don't decide on the spot",
+    "not on the spot"
+  ],
+  "T-15": [
+    "i'll wait and see",
+    "wait and see",
+    "let's see how it goes"
+  ],
+  "W-01": [
+    "a lot of money for a service contract",
+    "don't see the value in a warranty",
+    "warranty costs too much",
+    "service plan is expensive"
+  ],
+  "W-02": [
+    "i'll just pay for repairs",
+    "i'll pay for repairs myself",
+    "i'll cover repairs",
+    "i'll fix it if it breaks"
+  ],
+  "W-03": [
+    "i don't keep cars long",
+    "i trade often",
+    "i don't keep my cars"
+  ],
+  "W-04": [
+    "i'm buying a reliable brand",
+    "this brand is reliable",
+    "it's a reliable car",
+    "toyota never breaks",
+    "hondas are reliable"
+  ],
+  "W-05": [
+    "my last car never broke",
+    "never had a breakdown",
+    "my old car was fine"
+  ],
+  "W-06": [
+    "i don't drive enough to need it",
+    "i barely drive",
+    "low miles",
+    "don't drive much"
+  ],
+  "W-07": [
+    "i take good care of my vehicles",
+    "i maintain my cars",
+    "i take care of it"
+  ],
+  "W-08": [
+    "i have a mechanic i trust",
+    "i have my own mechanic",
+    "my own guy fixes it",
+    "i've got a mechanic",
+    "my mechanic handles it"
+  ],
+  "W-09": [
+    "i'll decide later",
+    "decide on the warranty later",
+    "warranty later",
+    "i do my own maintenance",
+    "do my own oil changes",
+    "i handle maintenance myself"
+  ],
+  "W-10": [
+    "i've heard bad things about warranties",
+    "warranties are a scam",
+    "heard warranties don't pay",
+    "bad things about extended warranties",
+    "maintenance is cheap",
+    "oil changes are cheap"
+  ],
+  "W-11": [
+    "i don't like contracts",
+    "don't want a contract",
+    "no contracts",
+    "take it to my own mechanic",
+    "my guy",
+    "i have my own mechanic"
+  ],
+  "W-12": [
+    "i'll just trade it before anything happens",
+    "i'll trade it in first",
+    "trade before it breaks"
+  ],
+  "W-13": [
+    "i don't want to waste money",
+    "don't want to waste money",
+    "waste of money"
+  ],
+  "W-14": [
+    "i'll rely on the factory warranty",
+    "the factory warranty covers it",
+    "it's still under warranty"
+  ],
+  "W-15": [
+    "i just don't feel like i need it",
+    "don't feel like i need it",
+    "i just don't need it"
+  ],
+  "SP-CASH": [
+    "i'm paying cash",
+    "paying cash",
+    "cash buyer",
+    "no financing",
+    "i'm a cash buyer",
+    "i don't need any of this",
+    "buying it cash",
+    "cash deal"
+  ]
+}
