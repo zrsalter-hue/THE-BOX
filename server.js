@@ -30,6 +30,16 @@ db.exec(`CREATE TABLE IF NOT EXISTS paid (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )`);
 
+// ---- Usage events (visits, searches, unlocks, paywall views) ----
+db.exec(`CREATE TABLE IF NOT EXISTS events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  type TEXT NOT NULL,
+  visitor_id TEXT,
+  detail TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)`);
+db.exec(`CREATE INDEX IF NOT EXISTS idx_events_type_time ON events(type, created_at)`);
+
 // ---- Stripe ----
 const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY || "";
 const PUBLIC_URL = (process.env.PUBLIC_URL || "").replace(/\/+$/, "");
@@ -96,6 +106,54 @@ function returnBase(req) {
 // ---- API routes ----
 app.get("/api/stripe/status", (req, res) => {
   res.json({ configured: stripeConfigured(), price_cents: PRICE_CENTS });
+});
+
+// Record a usage event. type = visit | search | unlock | paywall_view
+const ALLOWED_EVENTS = new Set(["visit", "search", "unlock", "paywall_view"]);
+app.post("/api/track", (req, res) => {
+  try {
+    const type = String(req.body && req.body.type || "").slice(0, 32);
+    if (!ALLOWED_EVENTS.has(type)) return res.status(400).json({ ok: false });
+    const v = visitorId(req);
+    const detail = req.body && req.body.detail ? String(req.body.detail).slice(0, 200) : null;
+    db.prepare("INSERT INTO events (type, visitor_id, detail) VALUES (?, ?, ?)").run(type, v, detail);
+    res.json({ ok: true });
+  } catch (e) {
+    res.json({ ok: false });
+  }
+});
+
+// Usage stats for the morning briefing. ?token= must match STATS_TOKEN env (if set).
+app.get("/api/stats", (req, res) => {
+  const need = process.env.STATS_TOKEN || "";
+  if (need && req.query.token !== need) return res.status(403).json({ error: "forbidden" });
+  const since24 = "datetime('now','-1 day')";
+  const countToday = (type) =>
+    db.prepare(`SELECT COUNT(*) n FROM events WHERE type = ? AND created_at >= ${since24}`).get(type).n;
+  const countAll = (type) =>
+    db.prepare("SELECT COUNT(*) n FROM events WHERE type = ?").get(type).n;
+  const uniqVisitors24 =
+    db.prepare(`SELECT COUNT(DISTINCT visitor_id) n FROM events WHERE created_at >= ${since24}`).get().n;
+  const uniqVisitorsAll =
+    db.prepare("SELECT COUNT(DISTINCT visitor_id) n FROM events").get().n;
+  const paidCount = db.prepare("SELECT COUNT(*) n FROM paid").get().n;
+  res.json({
+    last24h: {
+      unique_visitors: uniqVisitors24,
+      visits: countToday("visit"),
+      searches: countToday("search"),
+      unlocks: countToday("unlock"),
+      paywall_views: countToday("paywall_view"),
+    },
+    all_time: {
+      unique_visitors: uniqVisitorsAll,
+      visits: countAll("visit"),
+      searches: countAll("search"),
+      unlocks: countAll("unlock"),
+      paywall_views: countAll("paywall_view"),
+      paid_unlocks: paidCount,
+    },
+  });
 });
 
 app.get("/api/access", (req, res) => {

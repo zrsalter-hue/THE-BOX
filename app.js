@@ -35,6 +35,25 @@
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
 
+  // ---------- Usage tracking (fire-and-forget) ----------
+  let _lastSearchTrack = 0;
+  function track(type, detail) {
+    try {
+      // throttle search events so live-typing doesn't flood: max 1 per 1.5s
+      if (type === "search") {
+        const now = Date.now();
+        if (now - _lastSearchTrack < 1500) return;
+        _lastSearchTrack = now;
+      }
+      fetch(`${API}/api/track`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: type, detail: detail || null }),
+        keepalive: true,
+      }).catch(() => {});
+    } catch (e) { /* ignore */ }
+  }
+
   // ---------- Load data ----------
   async function loadJson(path) {
     const r = await fetch(path, { cache: "no-store" });
@@ -75,6 +94,7 @@
       bindEvents();
       checkUrlParams();
       renderEmpty();
+      track("visit");
       // Backend: is Stripe live, and has this visitor already paid?
       await syncAccessFromServer();
       await handleCheckoutReturn();
@@ -511,6 +531,7 @@
     }
     const results = search(q);
     state.currentResult = results;
+    track("search", q.slice(0, 120));
     if (results.length === 0) {
       renderNoMatch(q);
       $("#searchMeta").textContent = "No match. Try a shorter phrase or pick a suggestion.";
@@ -575,6 +596,7 @@
         b.addEventListener("click", () => {
           if (freeRemaining() > 0) {
             state.unlocked.add(obj.id);
+            track("unlock", obj.id);
             renderResults(state.currentResult);
             const left = freeRemaining();
             showToast(left > 0
@@ -582,6 +604,7 @@
               : "That was your last free unlock. Get unlimited for $49.");
           } else {
             state.currentResult = [obj].concat(state.currentResult.filter((x) => x.id !== obj.id));
+            track("paywall_view", obj.id);
             openModal("payOverlay");
           }
         })
@@ -590,6 +613,7 @@
       card.querySelectorAll(".unlock-trigger").forEach((b) =>
         b.addEventListener("click", () => {
           state.currentResult = [obj].concat(state.currentResult.filter((x) => x.id !== obj.id));
+          track("paywall_view", obj.id);
           openModal("payOverlay");
         })
       );
