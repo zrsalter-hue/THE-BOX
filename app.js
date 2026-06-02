@@ -295,56 +295,13 @@
     } catch (e) { /* ignore */ }
   }
 
+  // Gate removed — users land directly in the app. Free unlocks gate the
+  // valuable content via the Stripe paywall in updateAccessUi() /
+  // bindResultEvents(). Email is no longer required up-front; we keep
+  // applyAccessForEmail() callable in case an owner/founder email arrives
+  // via URL param later.
   function bindGate() {
-    const gate = $("#gate");
-    const gateForm = $("#gateForm");
-    const enterButtons = $$("[data-enter-app]");
-    if (!gate) return;
-
-    const emailInput = $("#loginEmail");
-    const errEl = $("#gateError");
-
-    const showError = (msg) => {
-      if (errEl) {
-        errEl.textContent = msg;
-        errEl.style.display = "block";
-      }
-      if (emailInput) {
-        emailInput.setAttribute("aria-invalid", "true");
-        emailInput.focus();
-      }
-    };
-    const clearError = () => {
-      if (errEl) errEl.style.display = "none";
-      if (emailInput) emailInput.removeAttribute("aria-invalid");
-    };
-
-    if (emailInput) emailInput.addEventListener("input", clearError);
-
-    const enterApp = (e, source) => {
-      if (e) e.preventDefault();
-      const email = (emailInput ? emailInput.value : "").trim().toLowerCase();
-      if (!EMAIL_RE.test(email)) {
-        showError("Enter a valid email to get in.");
-        return;
-      }
-      clearError();
-      captureLead(email, source || "gate");
-      applyAccessForEmail(email);
-      document.body.classList.remove("gate-active");
-      gate.setAttribute("aria-hidden", "true");
-      setTimeout(() => {
-        const q = $("#q");
-        if (q) q.focus({ preventScroll: false });
-      }, 160);
-    };
-
-    if (gateForm) gateForm.addEventListener("submit", (e) => enterApp(e, "signin"));
-    enterButtons.forEach((btn) => btn.addEventListener("click", (e) => {
-      if (btn.classList.contains("auth-tab")) return;
-      const src = btn.classList.contains("auth-google") ? "google" : "register";
-      enterApp(e, src);
-    }));
+    // no-op
   }
 
   function normalizeEmail(email) {
