@@ -40,6 +40,14 @@ db.exec(`CREATE TABLE IF NOT EXISTS events (
 )`);
 db.exec(`CREATE INDEX IF NOT EXISTS idx_events_type_time ON events(type, created_at)`);
 
+// ---- Email leads captured at the gate ----
+db.exec(`CREATE TABLE IF NOT EXISTS leads (
+  email TEXT PRIMARY KEY,
+  visitor_id TEXT,
+  source TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)`);
+
 // ---- Stripe ----
 const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY || "";
 const PUBLIC_URL = (process.env.PUBLIC_URL || "").replace(/\/+$/, "");
@@ -137,6 +145,8 @@ app.get("/api/stats", (req, res) => {
   const uniqVisitorsAll =
     db.prepare("SELECT COUNT(DISTINCT visitor_id) n FROM events").get().n;
   const paidCount = db.prepare("SELECT COUNT(*) n FROM paid").get().n;
+  const leads24 = db.prepare(`SELECT COUNT(*) n FROM leads WHERE created_at >= ${since24}`).get().n;
+  const leadsAll = db.prepare("SELECT COUNT(*) n FROM leads").get().n;
   res.json({
     last24h: {
       unique_visitors: uniqVisitors24,
@@ -144,6 +154,7 @@ app.get("/api/stats", (req, res) => {
       searches: countToday("search"),
       unlocks: countToday("unlock"),
       paywall_views: countToday("paywall_view"),
+      leads: leads24,
     },
     all_time: {
       unique_visitors: uniqVisitorsAll,
@@ -152,8 +163,26 @@ app.get("/api/stats", (req, res) => {
       unlocks: countAll("unlock"),
       paywall_views: countAll("paywall_view"),
       paid_unlocks: paidCount,
+      leads: leadsAll,
     },
   });
+});
+
+// Capture an email lead at the gate. Upsert so repeat visits don't error.
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+app.post("/api/lead", (req, res) => {
+  try {
+    const email = String(req.body && req.body.email || "").trim().toLowerCase().slice(0, 200);
+    if (!EMAIL_RE.test(email)) return res.status(400).json({ ok: false, error: "invalid email" });
+    const v = visitorId(req);
+    const source = req.body && req.body.source ? String(req.body.source).slice(0, 32) : "gate";
+    db.prepare(
+      "INSERT INTO leads (email, visitor_id, source) VALUES (?, ?, ?) ON CONFLICT(email) DO UPDATE SET visitor_id=excluded.visitor_id"
+    ).run(email, v, source);
+    res.json({ ok: true });
+  } catch (e) {
+    res.json({ ok: false });
+  }
 });
 
 app.get("/api/access", (req, res) => {

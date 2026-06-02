@@ -282,16 +282,54 @@
     });
   }
 
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  function captureLead(email, source) {
+    try {
+      fetch(`${API}/api/lead`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email, source: source || "gate" }),
+        keepalive: true,
+      }).catch(() => {});
+    } catch (e) { /* ignore */ }
+  }
+
   function bindGate() {
     const gate = $("#gate");
     const gateForm = $("#gateForm");
     const enterButtons = $$("[data-enter-app]");
     if (!gate) return;
 
-    const enterApp = (e) => {
+    const emailInput = $("#loginEmail");
+    const errEl = $("#gateError");
+
+    const showError = (msg) => {
+      if (errEl) {
+        errEl.textContent = msg;
+        errEl.style.display = "block";
+      }
+      if (emailInput) {
+        emailInput.setAttribute("aria-invalid", "true");
+        emailInput.focus();
+      }
+    };
+    const clearError = () => {
+      if (errEl) errEl.style.display = "none";
+      if (emailInput) emailInput.removeAttribute("aria-invalid");
+    };
+
+    if (emailInput) emailInput.addEventListener("input", clearError);
+
+    const enterApp = (e, source) => {
       if (e) e.preventDefault();
-      const emailInput = $("#loginEmail");
-      const email = emailInput ? emailInput.value : "";
+      const email = (emailInput ? emailInput.value : "").trim().toLowerCase();
+      if (!EMAIL_RE.test(email)) {
+        showError("Enter a valid email to get in.");
+        return;
+      }
+      clearError();
+      captureLead(email, source || "gate");
       applyAccessForEmail(email);
       document.body.classList.remove("gate-active");
       gate.setAttribute("aria-hidden", "true");
@@ -301,10 +339,11 @@
       }, 160);
     };
 
-    if (gateForm) gateForm.addEventListener("submit", enterApp);
+    if (gateForm) gateForm.addEventListener("submit", (e) => enterApp(e, "signin"));
     enterButtons.forEach((btn) => btn.addEventListener("click", (e) => {
       if (btn.classList.contains("auth-tab")) return;
-      enterApp(e);
+      const src = btn.classList.contains("auth-google") ? "google" : "register";
+      enterApp(e, src);
     }));
   }
 

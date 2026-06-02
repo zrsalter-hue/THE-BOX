@@ -1141,3 +1141,16 @@ input { font-family: inherit; }
 @media (prefers-reduced-motion: reduce) {
   .toast { transition: opacity 0.25s ease; transform: translateX(-50%); }
 }
+
+/* Gate email-required error */
+.auth-error {
+  margin: -2px 0 4px;
+  color: #e8736b;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+.auth-field input[aria-invalid="true"] {
+  border-color: #e8736b !important;
+  box-shadow: 0 0 0 2px rgba(232,115,107,0.18);
+}
