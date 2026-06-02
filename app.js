@@ -643,10 +643,10 @@
 
     const followUps = (o.follow_ups || []).length
       ? `
-        <div class="follow-ups">
+        <div class="follow-ups${unlocked ? "" : " locked-blur"}">
           <p class="follow-ups-label">Follow-up rail</p>
           <ul class="follow-list">
-            ${o.follow_ups.map((q) => `<li>${esc(q)}</li>`).join("")}
+            ${o.follow_ups.map((q) => `<li>${unlocked ? esc(q) : esc(teaser(q, 5))}</li>`).join("")}
           </ul>
         </div>`
       : "";
@@ -655,6 +655,7 @@
     const unlimitedLabel = `${esc(state.config.pricing.unlimited_label || "Get unlimited")} — ${esc(state.config.pricing.unlimited_display || "$49")}`;
     const lockIcon = `<svg class="lock-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
 
+    const unlimitedCta = `Unlock all ${state.objections.length} moves — ${esc(state.config.pricing.unlimited_display || "$49")} once`;
     const lockCta = unlocked
       ? ""
       : remaining > 0
@@ -662,24 +663,26 @@
         <div class="lock-cta">
           <div class="lock-cta-head">
             ${lockIcon}
-            <h4 class="lock-cta-title">Unlock the full move</h4>
+            <h4 class="lock-cta-title">You're one line away from the close</h4>
           </div>
-          <p class="lock-cta-sub">You're seeing the customer line and signal. Unlock to see the soft open, pivot, close, pushback line, and the follow-up rail. <strong>${remaining} free ${remaining === 1 ? "unlock" : "unlocks"} left.</strong></p>
+          <p class="lock-cta-sub">You've got the opening. The pivot, the close, and the pushback answer — the part that actually saves the deal — is right here. Don't wing the moment that matters most. <strong>${remaining} free ${remaining === 1 ? "unlock" : "unlocks"} left.</strong></p>
           <div class="lock-buttons">
-            <button type="button" class="btn btn-primary free-unlock">Unlock free (${remaining} left)</button>
-            <button type="button" class="btn btn-secondary unlock-trigger">${unlimitedLabel}</button>
+            <button type="button" class="btn btn-primary free-unlock">See the full move (free — ${remaining} left)</button>
+            <button type="button" class="btn btn-secondary unlock-trigger">${unlimitedCta}</button>
           </div>
+          <p class="lock-fineprint">Lifetime access. Less than you make on a single deal.</p>
         </div>`
       : `
         <div class="lock-cta">
           <div class="lock-cta-head">
             ${lockIcon}
-            <h4 class="lock-cta-title">You've used your 3 free unlocks</h4>
+            <h4 class="lock-cta-title">You've seen what it does. Now own all ${state.objections.length}.</h4>
           </div>
-          <p class="lock-cta-sub">Get every move in The Box — all ${state.objections.length} objections, fully unlocked, forever. One payment.</p>
+          <p class="lock-cta-sub">Every objection, every move — the soft open, pivot, close, and pushback for all ${state.objections.length} situations. Ready the second a customer opens their mouth.</p>
           <div class="lock-buttons">
-            <button type="button" class="btn btn-primary unlock-trigger">${unlimitedLabel}</button>
+            <button type="button" class="btn btn-primary unlock-trigger">${unlimitedCta}</button>
           </div>
+          <p class="lock-fineprint">One payment. Lifetime access. Less than you make on a single deal.</p>
         </div>`;
 
     return `
