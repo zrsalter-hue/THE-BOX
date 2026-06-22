@@ -372,12 +372,55 @@ input { font-family: inherit; }
 .hero-sub {
   margin: 12px auto 0;
   max-width: 580px;
+  color: #f3ead6;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.hero-support {
+  margin: 10px auto 0;
+  max-width: 560px;
   color: #b9b2a4;
-  font-size: 14.5px;
+  font-size: 14px;
   line-height: 1.6;
 }
 .hero-tools {
   margin-top: 20px;
+}
+
+/* ---------- Email capture modal ---------- */
+.email-lead {
+  color: #cfc7b6;
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 0 0 16px;
+}
+.email-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.email-form input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px 16px;
+  font-size: 16px;
+  color: #f3ead6;
+  background: #141414;
+  border: 1px solid #3a352b;
+  border-radius: 10px;
+  outline: none;
+}
+.email-form input:focus {
+  border-color: #c9a24b;
+}
+.email-form .btn {
+  width: 100%;
+}
+.email-err {
+  color: #e08a7a;
+  font-size: 13px;
+  margin: 10px 0 0;
 }
 
 /* ---------- Search card ---------- */

@@ -295,13 +295,49 @@
     } catch (e) { /* ignore */ }
   }
 
-  // Gate removed — users land directly in the app. Free unlocks gate the
-  // valuable content via the Stripe paywall in updateAccessUi() /
-  // bindResultEvents(). Email is no longer required up-front; we keep
-  // applyAccessForEmail() callable in case an owner/founder email arrives
-  // via URL param later.
+  // Email capture: users land directly in the app, but the FIRST free unlock
+  // asks for an email (high-intent moment). Once captured, never ask again.
+  const LEAD_KEY = "box_lead_email";
+
+  function hasCapturedLead() {
+    try { return !!localStorage.getItem(LEAD_KEY); } catch (e) { return false; }
+  }
+
+  function rememberLead(email) {
+    try { localStorage.setItem(LEAD_KEY, email); } catch (e) { /* ignore */ }
+  }
+
+  // Opens the email modal; runs onSuccess() after a valid email is captured.
+  let pendingLeadAction = null;
+  function promptForEmail(onSuccess) {
+    pendingLeadAction = onSuccess || null;
+    const err = $("#emailErr");
+    if (err) err.hidden = true;
+    openModal("emailOverlay");
+    const input = $("#emailInput");
+    if (input) setTimeout(() => input.focus(), 50);
+  }
+
   function bindGate() {
-    // no-op
+    const form = $("#emailForm");
+    if (!form) return;
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const input = $("#emailInput");
+      const err = $("#emailErr");
+      const email = normalizeEmail(input && input.value);
+      if (!EMAIL_RE.test(email)) {
+        if (err) err.hidden = false;
+        return;
+      }
+      rememberLead(email);
+      captureLead(email, "first_unlock");
+      applyAccessForEmail(email); // owner/founder emails auto-unlock everything
+      closeAllModals();
+      const action = pendingLeadAction;
+      pendingLeadAction = null;
+      if (typeof action === "function") action();
+    });
   }
 
   function normalizeEmail(email) {
@@ -588,20 +624,29 @@
       const obj = state.objections.find((o) => o.id === id);
       if (!obj) return;
       // Free unlock: spend one of the free allowance on this card
+      const doFreeUnlock = () => {
+        if (freeRemaining() > 0) {
+          state.unlocked.add(obj.id);
+          track("unlock", obj.id);
+          renderResults(state.currentResult);
+          const left = freeRemaining();
+          showToast(left > 0
+            ? `Card unlocked. ${left} free ${left === 1 ? "unlock" : "unlocks"} left.`
+            : "That was your last free unlock. Get unlimited for $49.");
+        } else {
+          state.currentResult = [obj].concat(state.currentResult.filter((x) => x.id !== obj.id));
+          track("paywall_view", obj.id);
+          openModal("payOverlay");
+        }
+      };
       card.querySelectorAll(".free-unlock").forEach((b) =>
         b.addEventListener("click", () => {
-          if (freeRemaining() > 0) {
-            state.unlocked.add(obj.id);
-            track("unlock", obj.id);
-            renderResults(state.currentResult);
-            const left = freeRemaining();
-            showToast(left > 0
-              ? `Card unlocked. ${left} free ${left === 1 ? "unlock" : "unlocks"} left.`
-              : "That was your last free unlock. Get unlimited for $49.");
+          // Capture an email on the first free unlock; then unlock.
+          // Owners/founders and returning visitors skip straight through.
+          if (!hasCapturedLead() && state.accessRole === "visitor" && !state.unlimited) {
+            promptForEmail(doFreeUnlock);
           } else {
-            state.currentResult = [obj].concat(state.currentResult.filter((x) => x.id !== obj.id));
-            track("paywall_view", obj.id);
-            openModal("payOverlay");
+            doFreeUnlock();
           }
         })
       );

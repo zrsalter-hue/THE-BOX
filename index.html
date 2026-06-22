@@ -48,7 +48,8 @@
         <img class="app-bull" src="gold_bull.png" alt="" width="132" height="132" />
         <h1 id="hero-title" class="box-wordmark app-title">THE BOX</h1>
         <p class="script-byline app-byline">by Still Point</p>
-        <p class="hero-sub">The execution layer for the finance office.</p>
+        <p class="hero-sub">Word-for-word closes for every customer objection &mdash; in seconds.</p>
+        <p class="hero-support">196 battle-tested F&amp;I moves from a 20-year finance director. Built for F&amp;I managers who don&rsquo;t wing the moment that matters.</p>
         <nav class="toolbar hero-tools" aria-label="Training tools">
           <button type="button" class="tool" id="btnHowto">HOW TO USE</button>
           <button type="button" class="tool" id="btnSignals">STATE-BASED CLOSE MATRIX</button>
@@ -104,6 +105,24 @@
         <span id="paySinglePrice" hidden></span>
         <button type="button" class="preview-unlock" id="previewUnlock" hidden>Preview unlock (owner only)</button>
         <p class="pay-foot">Secure checkout by Stripe. One-time payment unlocks all moves on this device.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Email capture modal (fires on first free unlock) -->
+  <div class="overlay" id="emailOverlay" role="dialog" aria-modal="true" aria-labelledby="emailTitle" hidden>
+    <div class="modal modal-email">
+      <div class="mhead">
+        <h2 id="emailTitle">One quick thing</h2>
+        <button type="button" class="x" data-close aria-label="Close">×</button>
+      </div>
+      <div class="mbody">
+        <p class="email-lead">Drop your email and your free unlocks open up. We&rsquo;ll send you a few of the highest-leverage moves &mdash; no spam, unsubscribe anytime.</p>
+        <form id="emailForm" class="email-form" autocomplete="on">
+          <input id="emailInput" type="email" inputmode="email" autocomplete="email" placeholder="you@dealership.com" aria-label="Your email" required />
+          <button type="submit" class="btn btn-primary" id="emailSubmit">Unlock the move</button>
+        </form>
+        <p class="email-err" id="emailErr" hidden>Please enter a valid email.</p>
       </div>
     </div>
   </div>
