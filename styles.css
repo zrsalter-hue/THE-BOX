@@ -1016,6 +1016,16 @@ input { font-family: inherit; }
   transition: background .15s ease;
 }
 .preview-unlock:hover { background: rgba(94,196,138,0.06); }
+.pay-guarantee {
+  margin: 16px 0 0;
+  padding: 11px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #e7dcc4;
+  background: rgba(201,162,75,0.08);
+  border: 1px solid rgba(201,162,75,0.28);
+  border-radius: 10px;
+}
 .pay-foot {
   font-size: 12px;
   color: var(--text-mute);
