@@ -67,6 +67,12 @@ select,input{background:#0d1218;color:var(--ink);border:1px solid var(--line);bo
 .note{font-size:12px;color:var(--mute);margin-top:10px}
 @media(max-width:900px){.r1,.r3{grid-template-columns:minmax(0,1fr)}.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.form{grid-template-columns:1fr 1fr}#cgOut{grid-template-columns:1fr 1fr}}
 @media(max-width:480px){.chips{margin-left:0}table{font-size:13px}.hide-s{display:none}}
+#absHist{width:100%;height:90px;display:block}
+.absg{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) minmax(0,1.2fr);gap:20px;align-items:start}
+.meter{height:10px;border-radius:5px;background:#222;overflow:hidden;margin:8px 0 4px}.meter div{height:100%;transition:width .4s}
+.impl{font-size:15px;line-height:1.5}.impl b{font-weight:600}
+.lv{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:13px}.lv span{white-space:nowrap}
+@media(max-width:900px){.absg{grid-template-columns:minmax(0,1fr)}}
 #premSpark{width:100%;height:120px;display:block}
 .usg{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr) minmax(0,1fr);gap:18px;align-items:start}
 @media(max-width:900px){.usg{grid-template-columns:minmax(0,1fr)}}
@@ -122,6 +128,31 @@ select,input{background:#0d1218;color:var(--ink);border:1px solid var(--line);bo
   </div>
   <div class="fig" id="fig"><canvas id="cv"></canvas><div id="tip"></div></div>
   <div class="legend" style="margin-top:8px"><span style="--c:var(--btc)">CVD all venues</span><span style="--c:var(--spot)">Spot CVD</span><span style="--c:var(--perp)">Perp CVD</span><span style="--c:#8592a3">Price (right axis)</span><span>Bars: net delta per slice · CVD rebased to 0 at left edge</span></div>
+</section>
+
+<section class="card" style="margin-bottom:14px">
+  <div class="head"><h2>Absorption · is the flow moving price?</h2>
+    <div class="seg" id="awin"><button data-m="1">1m</button><button data-m="5" class="on">5m</button><button data-m="15">15m</button></div>
+  </div>
+  <div class="absg">
+    <div>
+      <div id="absState" class="big" style="font-size:clamp(22px,3vw,30px);line-height:1.15">Calibrating…</div>
+      <div id="absSide" class="mute" style="font-size:14px;margin-top:4px">Needs about 10 minutes of trades to learn normal price impact</div>
+      <div class="meter"><div id="absMeter" style="width:0%"></div></div>
+      <div class="mute" style="font-size:12px">Absorption strength <b id="absScore" style="color:var(--ink)">—</b> / 100</div>
+    </div>
+    <div>
+      <div class="mute" style="font-size:12px;margin-bottom:4px">What it means for BTC</div>
+      <div id="absImpl" class="impl mute">Waiting for enough data.</div>
+      <div class="lv" id="absLv"></div>
+    </div>
+    <div>
+      <table><thead><tr><th>Window</th><th>Net delta</th><th>Normal move</th><th>Actual</th><th>Absorbed</th></tr></thead><tbody id="absT"></tbody></table>
+      <div class="mute" style="font-size:12px;margin-top:6px" id="absK"></div>
+    </div>
+  </div>
+  <div style="margin-top:14px"><div class="mute" style="font-size:12px">Absorption, last 60 minutes · above the line = selling absorbed (bullish), below = buying absorbed (bearish)</div><canvas id="absHist"></canvas></div>
+  <p class="note">Normal move = how far price typically moves for this much net delta, learned from the last hour of 1‑minute bars on this page. Absorbed = share of that expected move that didn't happen. High absorption means passive limit orders are soaking up aggressive flow: the side doing the absorbing usually wins once the aggressor runs out, unless price breaks through the absorbing level.</p>
 </section>
 
 <div class="tiles" id="tiles"></div>
@@ -463,6 +494,57 @@ function usTick(){
   g.lineWidth=2;for(let i=1;i<sm.length;i++){g.strokeStyle=sm[i].v>=0?'#18c784':'#f0434f';g.beginPath();g.moveTo(xx(sm[i-1].t),y(sm[i-1].v));g.lineTo(xx(sm[i].t),y(sm[i].v));g.stroke()}
 }
 setInterval(usTick,1000);
+// ---------- Absorption ----------
+let awin=5;const absH=[];
+seg('awin',m=>{awin=m;absTick()});
+function win(sec){const t=nowS(),from=t-sec+1;let d=0,first=0,last=0,hi=-Infinity,lo=Infinity,prev=0;
+  for(let i=order.length-1;i>=0;i--){const k=order[i],b=B.get(k);if(k<from){prev=b.px;break}d+=b.b-b.s;if(!last)last=b.px;first=b.px;if(b.px>hi)hi=b.px;if(b.px<lo)lo=b.px}
+  const p0=prev||first;return{d,p0,last,hi,lo,ret:p0&&last?(last-p0)/p0*1e4:0,n:last?1:0}}
+function impact(){ // bps per $1M net delta + typical |delta| per minute, from completed 1-min bars
+  const t=nowS(),cur=t-t%60,bars=[];
+  for(let m=cur-3600;m<cur;m+=60){let d=0,p0=0,p1=0,has=false;for(let k=m;k<m+60;k++){const b=B.get(k);if(b){d+=b.b-b.s;if(!p0)p0=b.px;p1=b.px;has=true}}
+    if(has&&p0)bars.push({d:d/1e6,r:(p1-p0)/p0*1e4})}
+  if(bars.length<10)return null;
+  let sdr=0,sdd=0,ad=0,ar=0;for(const x of bars){sdr+=x.d*x.r;sdd+=x.d*x.d;ad+=Math.abs(x.d);ar+=Math.abs(x.r)}
+  let k=sdd?sdr/sdd:0;const kAlt=ad?ar/ad:0;if(!(k>0)||bars.length<20)k=Math.max(k,kAlt*0.7);
+  return{k,typ:ad/bars.length*1e6,n:bars.length}}
+function absCalc(sec,I){const w=win(sec);if(!w.n)return null;
+  const exp=I.k*w.d/1e6,act=w.ret,z=Math.abs(w.d)/(I.typ*Math.sqrt(sec/60)||1);
+  let abs=Math.abs(exp)>0.5?1-act/exp:0;abs=Math.max(-1,Math.min(1.5,abs));
+  return{...w,exp,act,z,abs,score:Math.round(Math.max(0,Math.min(1,abs))*Math.min(1,z/2)*100)}}
+function bps2usd(bps,p){return (bps>=0?'+':'−')+'$'+Math.abs(bps/1e4*p).toFixed(0)}
+function absTick(){
+  const I=impact(),st=$('absState'),sd=$('absSide'),im=$('absImpl'),lv=$('absLv');
+  if(!I){const mins=Math.floor((Date.now()-started)/60000);st.textContent='Calibrating…';st.className='big';sd.textContent=`Learning normal price impact: ${Math.min(mins,10)}/10 minutes`;return}
+  $('absK').textContent=`Normal impact right now: ${I.k.toFixed(2)} bps (≈$${(I.k/1e4*price).toFixed(0)}) per $1M of net delta · typical 1m delta ${fmt(I.typ,false)} · ${I.n} bars`;
+  $('absT').innerHTML=[1,5,15].map(m=>{const a=absCalc(m*60,I);if(!a)return'';const ab=Math.abs(a.exp)>0.5&&a.z>=0.8?(a.abs>1?'100%+':Math.max(0,Math.round(a.abs*100))+'%'):'—';
+    return `<tr${m===awin?' style="background:#161c25"':''}><td>${m}m</td><td class="${cls(a.d)}">${fmt(a.d)}</td><td>${bps2usd(a.exp,a.last)}</td><td class="${cls(a.act)}">${bps2usd(a.act,a.last)}</td><td>${ab}</td></tr>`}).join('');
+  const a=absCalc(awin*60,I);if(!a)return;
+  const buyAbs=a.d>0,col=buyAbs?'var(--sell)':'var(--buy)';
+  let state,side,impl,lean=0;
+  if(a.z<0.8){state='No significant flow';side='Net delta is too small to test absorption';impl='Nothing to read yet. Absorption only matters when one side is pushing hard.';}
+  else if(a.abs>=0.7){lean=buyAbs?-1:1;state=buyAbs?'Buying absorbed':'Selling absorbed';
+    side=buyAbs?`${fmt(a.d)} of market buying, price only ${bps2usd(a.act,a.last)}: passive sellers are capping it`:`${fmt(a.d)} of market selling, price only ${bps2usd(a.act,a.last)}: passive buyers are holding it`;
+    impl=buyAbs?`<b class="sell">Bearish lean.</b> A large seller is absorbing aggressive buys near <b>${pxFmt(a.hi)}</b>. When the buyers run out of steam, expect a fade toward <b>${pxFmt(a.lo)}</b> or lower. <b>Invalidation:</b> price pushes and holds above ${pxFmt(a.hi)} while buying continues. That means the seller is exhausted, and it often squeezes higher fast.`
+               :`<b class="buy">Bullish lean.</b> A large buyer is absorbing aggressive sells near <b>${pxFmt(a.lo)}</b>. When sellers exhaust, expect a bounce toward <b>${pxFmt(a.hi)}</b> or higher. <b>Invalidation:</b> price breaks and holds below ${pxFmt(a.lo)} while selling continues. That means the buyer stepped away, and it often flushes lower fast.`}
+  else if(a.abs>=0.35){lean=(buyAbs?-1:1)*0.5;state='Partial absorption';side=`Price moved ${Math.round((1-a.abs)*100)}% of what this ${buyAbs?'buying':'selling'} normally does`;
+    impl=buyAbs?`<b class="sell">Mild bearish lean.</b> Buyers are getting less for their money than usual. Upside is likely to stall under ${pxFmt(a.hi)} unless buying picks up.`
+               :`<b class="buy">Mild bullish lean.</b> Sellers are getting less for their money than usual. Downside is likely to stall above ${pxFmt(a.lo)} unless selling picks up.`}
+  else if(a.abs<-0.5){state='Thin book · price outrunning flow';side=`Price moved ${(a.act/a.exp).toFixed(1)}× what this delta normally does`;lean=0;
+    impl=`<b>Momentum with little resistance.</b> Price is moving ${a.d>0?'up':'down'} more than the ${a.d>0?'buying':'selling'} explains, so liquidity is thin on that side. The move can extend quickly, but it can also snap back once fresh orders refill the book.`}
+  else{state='Flow moving price normally';side='No passive wall in the way';lean=0;
+    impl=`<b>${a.d>0?'Buyers':'Sellers'} in control with no absorption.</b> Price is following the ${a.d>0?'buying':'selling'} as expected, which favors continuation ${a.d>0?'higher':'lower'} while the flow holds.`}
+  st.textContent=state;st.className='big '+(lean<0?'sell':lean>0?'buy':'');sd.textContent=side;sd.className='mute';
+  const sc=a.z>=0.8&&a.abs>0?a.score:0;$('absScore').textContent=sc;$('absMeter').style.width=sc+'%';$('absMeter').style.background=lean?col:'#8592a3';
+  im.innerHTML=impl;im.className='impl';
+  lv.innerHTML=a.hi>-Infinity?`<span class="mute">${awin}m high <b style="color:var(--ink)">${pxFmt(a.hi)}</b></span><span class="mute">${awin}m low <b style="color:var(--ink)">${pxFmt(a.lo)}</b></span><span class="mute">Last <b style="color:var(--ink)">${pxFmt(a.last)}</b></span>`:'';
+  // history (sampled every 10s, signed: + = selling absorbed)
+  const t=nowS();if(!absH.length||t-absH[absH.length-1].t>=10){absH.push({t,v:a.z>=0.8?(a.d>0?-1:1)*Math.max(0,Math.min(1,a.abs))*Math.min(1,a.z/2)*100:0});while(absH.length&&absH[0].t<t-3600)absH.shift()}
+  const c=$('absHist'),W=c.clientWidth,H=c.clientHeight,dp=window.devicePixelRatio||1;if(!W)return;c.width=W*dp;c.height=H*dp;const g=c.getContext('2d');g.setTransform(dp,0,0,dp,0,0);
+  g.strokeStyle='#3a4655';g.beginPath();g.moveTo(0,H/2);g.lineTo(W,H/2);g.stroke();
+  const bw=Math.max(2,W/360-1);for(const x of absH){const xx=W*(x.t-(t-3600))/3600,h=(H/2-2)*Math.abs(x.v)/100;g.fillStyle=x.v>0?'#18c784':'#f0434f';g.fillRect(xx,x.v>0?H/2-h:H/2,bw,h)}
+}
+setInterval(absTick,1000);
 }
 </script>
 </body>
