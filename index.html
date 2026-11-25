@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BTC CVD Watch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: a trading desk's order-flow monitor — terse, numeric, no decoration
+   IDEA: the tape reader's second screen: who is hitting the market right now
+   PICTURE: the live CVD line over price, with net delta bars beneath
+   COLOUR and TYPE: night terminal ground, buy green / sell red, BTC orange for CVD; Space Grotesk + Inter tabular figures
+   LAYOUT: pressure gauge + 15m candle first, chart full width, then tiles, venues, big prints, CoinGlass */
+:root{--bg:#0a0d12;--panel:#11161e;--line:#1f2733;--ink:#e8edf3;--mute:#8592a3;--buy:#18c784;--sell:#f0434f;--btc:#f7931a;--spot:#5aa9ff;--perp:#b18cff}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums;overflow-x:clip}
+.wrap{max-width:1320px;margin:0 auto;padding:16px max(2vw,12px) 40px}
+h1,h2,.big{font-family:"Space Grotesk",Inter,sans-serif;font-weight:600;margin:0}
+h1{font-size:22px}h2{font-size:15px;color:var(--mute);font-weight:500}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px;margin-bottom:14px}
+#price{font-size:clamp(26px,4vw,38px)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto}
+.chip{font-size:12px;padding:4px 9px;border:1px solid var(--line);border-radius:99px;color:var(--mute);white-space:nowrap}
+.chip i{display:inline-block;width:7px;height:7px;border-radius:50%;background:#555;margin-right:6px;vertical-align:1px}
+.chip.live i{background:var(--buy)}.chip.down i{background:var(--sell)}.chip.connecting i{background:var(--btc)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+.row{display:grid;gap:14px;margin-bottom:14px}
+.r1{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)}
+.r3{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr)}
+.head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{background:none;border:0;color:var(--mute);font:500 13px Inter,sans-serif;padding:8px 12px;min-height:36px;cursor:pointer}
+.seg button.on{background:#1d2530;color:var(--ink)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--btc);outline-offset:1px}
+.regime{font-size:clamp(24px,3.2vw,34px);line-height:1.1;margin:4px 0 12px}
+.gauge{position:relative;height:30px;border-radius:8px;overflow:hidden;display:flex;background:#222}
+.gauge div{height:100%;transition:width .4s}
+.gauge .mid{position:absolute;left:50%;top:-4px;bottom:-4px;width:2px;background:var(--ink);opacity:.5}
+.gl{display:flex;justify-content:space-between;margin-top:8px;font-size:14px}
+.buy{color:var(--buy)}.sell{color:var(--sell)}.mute{color:var(--mute)}
+.net{font-size:clamp(28px,4vw,40px)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px}.kv b{text-align:right;font-weight:600}
+#cd{font-size:clamp(30px,4vw,42px)}
+.div{margin-top:12px;padding:10px 12px;border-radius:8px;background:#161c25;font-size:14px}
+.fig{position:relative;height:clamp(300px,42vh,460px)}
+.fig canvas{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair}
+#tip{position:absolute;pointer-events:none;background:#0a0d12ee;border:1px solid var(--line);border-radius:6px;padding:6px 9px;font-size:12px;display:none;white-space:nowrap}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--mute)}
+.legend span::before{content:"";display:inline-block;width:14px;height:3px;margin-right:6px;vertical-align:3px;background:var(--c)}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:14px}
+.tile .big{font-size:24px;margin:2px 0}
+.bar{height:5px;border-radius:3px;background:var(--sell);overflow:hidden}.bar div{height:100%;background:var(--buy)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-weight:500;color:var(--mute);text-align:right;padding:6px 4px;border-bottom:1px solid var(--line)}
+td{padding:7px 4px;text-align:right;border-bottom:1px solid #18202a;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+#tape{list-style:none;margin:0;padding:0;max-height:300px;overflow-y:auto;font-size:14px}
+#tape li{display:grid;grid-template-columns:62px 1fr auto auto;gap:10px;padding:5px 2px;border-bottom:1px solid #18202a}
+#tape li b{text-align:right}
+select,input{background:#0d1218;color:var(--ink);border:1px solid var(--line);border-radius:8px;font:16px Inter,sans-serif;padding:8px 10px;min-height:40px}
+.form{display:grid;grid-template-columns:2fr 1fr 2fr 1fr auto;gap:10px;align-items:end}
+.form label{font-size:12px;color:var(--mute);display:grid;gap:4px}
+.btn{background:var(--btc);color:#111;border:0;border-radius:8px;font:600 14px Inter,sans-serif;padding:0 18px;min-height:40px;cursor:pointer}
+#cgOut{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) minmax(0,2fr);gap:14px;margin-top:14px;align-items:center}
+#cgSpark{width:100%;height:60px}
+.note{font-size:12px;color:var(--mute);margin-top:10px}
+@media(max-width:900px){.r1,.r3{grid-template-columns:minmax(0,1fr)}.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.form{grid-template-columns:1fr 1fr}#cgOut{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.chips{margin-left:0}table{font-size:13px}.hide-s{display:none}}
+#premSpark{width:100%;height:120px;display:block}
+.usg{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr) minmax(0,1fr);gap:18px;align-items:start}
+@media(max-width:900px){.usg{grid-template-columns:minmax(0,1fr)}}
+#etfBars{display:flex;align-items:stretch;gap:3px;height:170px;margin-top:6px}
+#etfBars .c{flex:1;display:grid;grid-template-rows:1fr 1fr 16px;cursor:default}
+#etfBars .u,#etfBars .d{display:flex;justify-content:center}#etfBars .u{align-items:flex-end}#etfBars .d{align-items:flex-start;border-top:1px solid #3a4655}
+#etfBars .u i,#etfBars .d i{display:block;width:80%;border-radius:2px}#etfBars .u i{background:var(--buy)}#etfBars .d i{background:var(--sell)}
+#etfBars .c span{font-size:10px;color:var(--mute);text-align:center;white-space:nowrap;overflow:hidden}
+.etfg{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr) minmax(0,1fr);gap:18px}
+@media(max-width:900px){.etfg{grid-template-columns:minmax(0,1fr)}#etfBars .c span{font-size:9px}}
+@media(prefers-reduced-motion:reduce){.gauge div{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div id="warn" style="display:none;background:#3a1d20;border:1px solid var(--sell);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:14px"><b>No live data is arriving.</b> <span id="warnWhy"></span></div>
+<header>
+  <div><h1>BTC order flow</h1><div class="mute" style="font-size:13px">Live taker CVD · 7 venues · spot + perps</div></div>
+  <div><div id="price" class="big">—</div><div id="pxSrc" class="mute" style="font-size:12px">waiting for trades</div></div>
+  <div class="chips" id="chips"></div>
+</header>
+
+<div class="row r1">
+  <section class="card">
+    <div class="head"><h2>Net buying pressure</h2>
+      <div class="seg" id="pwin"><button data-m="1">1m</button><button data-m="5" class="on">5m</button><button data-m="15">15m</button><button data-m="60">1h</button></div>
+    </div>
+    <div id="regime" class="regime big">Warming up…</div>
+    <div class="gauge"><div id="gB" style="width:50%;background:var(--buy)"></div><div id="gS" style="width:50%;background:var(--sell)"></div><span class="mid"></span></div>
+    <div class="gl"><span class="buy" id="gBl">Buyers —</span><span class="sell" id="gSl">Sellers —</span></div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px 28px;align-items:baseline;margin-top:14px">
+      <div><div class="mute" style="font-size:12px">Net delta (taker buy − sell)</div><div id="net" class="net big">—</div></div>
+      <div class="kv"><span class="mute">Spot net</span><b id="nSpot">—</b><span class="mute">Perp net</span><b id="nPerp">—</b><span class="mute">Total volume</span><b id="nVol">—</b></div>
+    </div>
+  </section>
+  <section class="card">
+    <div class="head"><h2>Current 15‑minute candle</h2><span class="mute" id="qLbl" style="font-size:13px"></span></div>
+    <div class="mute" style="font-size:12px">Closes in</div>
+    <div id="cd" class="big">--:--</div>
+    <div class="kv" style="margin-top:10px">
+      <span class="mute">Net delta this candle</span><b id="qNet">—</b>
+      <span class="mute">Buyer share</span><b id="qPct">—</b>
+      <span class="mute">Price since open</span><b id="qPx">—</b>
+      <span class="mute">Open price</span><b id="qOpen">—</b>
+    </div>
+    <div class="div" id="divg">Divergence check needs ~5 minutes of data.</div>
+  </section>
+</div>
+
+<section class="card" style="margin-bottom:14px">
+  <div class="head"><h2>Cumulative volume delta vs price</h2>
+    <div class="seg" id="cwin"><button data-m="5">5m</button><button data-m="15" class="on">15m</button><button data-m="60">1h</button><button data-m="240">4h</button></div>
+  </div>
+  <div class="fig" id="fig"><canvas id="cv"></canvas><div id="tip"></div></div>
+  <div class="legend" style="margin-top:8px"><span style="--c:var(--btc)">CVD all venues</span><span style="--c:var(--spot)">Spot CVD</span><span style="--c:var(--perp)">Perp CVD</span><span style="--c:#8592a3">Price (right axis)</span><span>Bars: net delta per slice · CVD rebased to 0 at left edge</span></div>
+</section>
+
+<div class="tiles" id="tiles"></div>
+
+<section class="card" style="margin-bottom:14px">
+  <div class="head"><h2>US spot demand · live ETF proxy</h2><span id="mkt" class="mute" style="font-size:13px"></span></div>
+  <div class="usg">
+    <div>
+      <div class="mute" style="font-size:12px">Coinbase premium (30s avg)</div>
+      <div id="prem" class="big" style="font-size:clamp(28px,4vw,38px)">—</div>
+      <div id="premTxt" style="font-size:14px;margin-top:2px">Needs Coinbase plus one offshore feed</div>
+      <div id="premRef" class="mute" style="font-size:12px;margin-top:6px"></div>
+    </div>
+    <div><div class="mute" style="font-size:12px">Premium, last 60 minutes</div><canvas id="premSpark"></canvas></div>
+    <div class="kv">
+      <span class="mute" id="usSessL">US session net</span><b id="usSess">—</b>
+      <span class="mute">US spot net 15m</span><b id="us15">—</b>
+      <span class="mute">US spot net 1h</span><b id="us60">—</b>
+      <span class="mute">US buyer share 1h</span><b id="usPct">—</b>
+    </div>
+  </div>
+  <p class="note">ETF buying settles through US spot venues (mostly Coinbase), so a rising Coinbase premium plus positive US spot delta during market hours is the live signature of ETF inflows. US spot = Coinbase + Kraken + Bitstamp. Official daily ETF totals are in the next panel.</p>
+</section>
+
+<section class="card" style="margin-bottom:14px" id="etf">
+  <div class="head"><h2>Spot BTC ETF net flows · official daily totals (CoinGlass key)</h2>
+    <div style="display:flex;gap:10px;align-items:center"><span id="etfStat" class="mute" style="font-size:13px">Add your CoinGlass key below to load</span><button class="btn" id="etfBtn" type="button" style="min-height:36px">Refresh</button></div></div>
+  <div class="etfg" id="etfBody" style="display:none">
+    <div class="kv" style="align-content:start">
+      <span class="mute" id="etfDayL">Latest day</span><b id="etfDay" style="font-size:22px;font-family:'Space Grotesk',sans-serif">—</b>
+      <span class="mute">5-day net</span><b id="etf5">—</b>
+      <span class="mute">20-day net</span><b id="etf20">—</b>
+      <span class="mute">Streak</span><b id="etfStreak">—</b>
+      <span class="mute">All-time cumulative</span><b id="etfCum">—</b>
+    </div>
+    <div><div class="mute" style="font-size:12px">Last 20 trading days</div><div id="etfBars"></div></div>
+    <div><div class="mute" style="font-size:12px;margin-bottom:4px" id="etfTL">By fund, latest day</div><table><tbody id="etfT"></tbody></table></div>
+  </div>
+  <p class="note">ETF flows are reported once per day after the US close, so the latest bar is usually yesterday's session. Refreshes every 15 minutes while open.</p>
+</section>
+
+<div class="row r3">
+  <section class="card">
+    <div class="head"><h2>By venue · <span id="vWin">5m</span></h2></div>
+    <table><thead><tr><th>Venue</th><th>Buy</th><th>Sell</th><th>Net</th><th class="hide-s">Buy %</th></tr></thead><tbody id="venues"></tbody></table>
+  </section>
+  <section class="card">
+    <div class="head"><h2>Large prints</h2>
+      <select id="thr" aria-label="Minimum print size"><option value="100000">≥ $100K</option><option value="250000" selected>≥ $250K</option><option value="500000">≥ $500K</option><option value="1000000">≥ $1M</option></select>
+    </div>
+    <ul id="tape"><li class="mute" style="display:block">No large prints yet.</li></ul>
+  </section>
+</div>
+
+<section class="card">
+  <div class="head"><h2>CoinGlass aggregated CVD (optional, needs your API key)</h2><span id="cgStat" class="mute" style="font-size:13px">Not connected</span></div>
+  <form class="form" id="cgForm">
+    <label>CG-API-KEY<input id="cgKey" type="password" autocomplete="off" placeholder="Paste your CoinGlass v4 key"></label>
+    <label>Market<select id="cgMkt"><option value="futures">Futures</option><option value="spot">Spot</option></select></label>
+    <label>Exchanges<input id="cgEx" value="Binance,OKX,Bybit,Coinbase"></label>
+    <label>Interval<select id="cgIv"><option>1m</option><option>5m</option><option>15m</option><option selected>30m</option><option>1h</option></select></label>
+    <button class="btn" id="cgBtn" type="submit">Connect</button>
+  </form>
+  <div id="cgOut" style="display:none">
+    <div><div class="mute" style="font-size:12px">Last bar net</div><div id="cgNet" class="big" style="font-size:22px">—</div></div>
+    <div><div class="mute" style="font-size:12px">Last bar buyer share</div><div id="cgPct" class="big" style="font-size:22px">—</div></div>
+    <div><div class="mute" style="font-size:12px">CVD over 120 bars</div><div id="cgCvd" class="big" style="font-size:22px">—</div></div>
+    <canvas id="cgSpark"></canvas>
+  </div>
+  <p class="note">Refreshes every 30 s. CoinGlass gives 1m–15m CVD only on its Standard plan and up; Startup starts at 30m, and Hobbyist has no CVD at all. Your key stays in this browser only.</p>
+</section>
+<p class="note">How it works: every trade from each venue is tagged by the aggressor (taker) side. CVD = running sum of taker buy $ − taker sell $. Buyer share = taker buy $ ÷ total taker $. Any venue that blocks your region simply shows red and is left out of the totals.</p>
+</div>
+
+<script>
+{
+const $=id=>document.getElementById(id);
+const fmt=(v,sign=true)=>{const a=Math.abs(v),s=v<0?'−':(v>0&&sign?'+':'');return s+'$'+(a>=1e9?(a/1e9).toFixed(2)+'B':a>=1e6?(a/1e6).toFixed(2)+'M':a>=1e3?(a/1e3).toFixed(0)+'K':a.toFixed(0))};
+const cls=v=>v>0?'buy':v<0?'sell':'';
+const setNum=(el,v,sign=true)=>{el.textContent=fmt(v,sign);el.className=el.className.replace(/\b(buy|sell)\b/g,'').trim()+' '+cls(v)};
+const pxFmt=p=>p?'$'+p.toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1}):'—';
+const binParse=m=>m.e==='aggTrade'?[[+m.p,+m.q,!m.m]]:null;
+const EX=[
+ {id:'binf',name:'Binance perp',type:'perp',url:'wss://fstream.binance.com/ws/btcusdt@aggTrade',parse:binParse},
+ {id:'byb',name:'Bybit perp',type:'perp',url:'wss://stream.bybit.com/v5/public/linear',sub:{op:'subscribe',args:['publicTrade.BTCUSDT']},ping:{op:'ping'},parse:m=>m.topic&&Array.isArray(m.data)?m.data.map(t=>[+t.p,+t.v,t.S==='Buy']):null},
+ {id:'okx',name:'OKX perp',type:'perp',url:'wss://ws.okx.com:8443/ws/v5/public',sub:{op:'subscribe',args:[{channel:'trades',instId:'BTC-USDT-SWAP'}]},ping:'ping',parse:m=>m.arg&&Array.isArray(m.data)?m.data.map(t=>[+t.px,+t.sz*0.01,t.side==='buy']):null},
+ {id:'bins',name:'Binance spot',type:'spot',url:'wss://stream.binance.com:9443/ws/btcusdt@aggTrade',parse:binParse},
+ {id:'cb',name:'Coinbase spot',type:'spot',us:1,url:'wss://ws-feed.exchange.coinbase.com',sub:{type:'subscribe',product_ids:['BTC-USD'],channels:['matches']},parse:m=>m.type==='match'?[[+m.price,+m.size,m.side==='sell']]:null},
+ {id:'bst',name:'Bitstamp spot',type:'spot',us:1,url:'wss://ws.bitstamp.net',sub:{event:'bts:subscribe',data:{channel:'live_trades_btcusd'}},parse:m=>m.event==='trade'&&m.data?[[+m.data.price,+m.data.amount,m.data.type===0]]:null},
+ {id:'krk',name:'Kraken spot',type:'spot',us:1,url:'wss://ws.kraken.com/v2',sub:{method:'subscribe',params:{channel:'trade',symbol:['BTC/USD']}},ping:{method:'ping'},parse:m=>m.channel==='trade'&&m.type==='update'?m.data.map(t=>[+t.price,+t.qty,t.side==='buy']):null},
+];
+const PX_PRI=['cb','binf','byb','okx','bins','bst','krk'];
+const B=new Map(),order=[];const KEEP=4*3600+60;
+let price=0,pxSrc='',pwin=5,cwin=15,thr=250000;const started=Date.now();
+
+function chips(){$('chips').innerHTML=EX.map(e=>`<span class="chip ${e.status||''}" title="${e.err||''}"><i></i>${e.name}</span>`).join('')}
+function connect(e){
+  e.status='connecting';chips();
+  let ws;try{ws=new WebSocket(e.url)}catch(err){e.status='down';chips();return retry(e)}
+  e.ws=ws;
+  ws.onopen=()=>{e.delay=2000;if(e.sub)ws.send(JSON.stringify(e.sub));if(e.ping)e.pt=setInterval(()=>{try{ws.send(typeof e.ping==='string'?e.ping:JSON.stringify(e.ping))}catch(_){}} ,20000)};
+  ws.onmessage=ev=>{let m;try{m=JSON.parse(ev.data)}catch(_){return}const r=e.parse(m);if(!r)return;
+    if(e.status!=='live'){e.status='live';chips()}e.last=Date.now();
+    for(const [p,q,isBuy] of r){if(p>0&&q>0)add(e,p,q,isBuy)}};
+  ws.onclose=()=>{clearInterval(e.pt);e.status='down';chips();retry(e)};
+  ws.onerror=()=>{try{ws.close()}catch(_){}};
+}
+function retry(e){e.delay=Math.min((e.delay||2000)*1.6,30000);setTimeout(()=>connect(e),e.delay)}
+// watchdog: a socket that goes silent for 60s gets recycled
+setInterval(()=>{for(const e of EX)if(e.status==='live'&&Date.now()-e.last>60000){try{e.ws.close()}catch(_){}}},15000);
+
+function add(e,p,q,isBuy){
+  const usd=p*q,s=Math.floor(Date.now()/1000);
+  let b=B.get(s);
+  if(!b){b={t:s,b:0,s:0,sb:0,ss:0,pb:0,ps:0,px:price||p,ex:{}};B.set(s,b);order.push(s);
+    while(order.length&&order[0]<s-KEEP)B.delete(order.shift())}
+  const k=e.type==='spot'?'s':'p';
+  if(isBuy){b.b+=usd;b[k+'b']+=usd}else{b.s+=usd;b[k+'s']+=usd}
+  const x=b.ex[e.id]||(b.ex[e.id]=[0,0]);x[isBuy?0:1]+=usd;if(e.us){if(isBuy)b.ub=(b.ub||0)+usd;else b.us=(b.us||0)+usd}
+  e.px=p;
+  const src=PX_PRI.find(id=>{const z=EX.find(y=>y.id===id);return z.status==='live'&&z.px});
+  if(src===e.id||!price){price=p;pxSrc=e.name}
+  b.px=price;
+  if(usd>=thr)tape(e,p,usd,isBuy);
+}
+function sum(fromSec){const o={b:0,s:0,sb:0,ss:0,pb:0,ps:0,ub:0,us:0,ex:{},first:0,last:0};
+  for(let i=order.length-1;i>=0&&order[i]>=fromSec;i--){const x=B.get(order[i]);o.b+=x.b;o.s+=x.s;o.sb+=x.sb;o.ss+=x.ss;o.pb+=x.pb;o.ps+=x.ps;o.ub+=x.ub||0;o.us+=x.us||0;o.first=x.px;if(!o.last)o.last=x.px;
+    for(const k in x.ex){const y=o.ex[k]||(o.ex[k]=[0,0]);y[0]+=x.ex[k][0];y[1]+=x.ex[k][1]}}
+  return o}
+const nowS=()=>Math.floor(Date.now()/1000);
+
+function tape(e,p,usd,isBuy){
+  const ul=$('tape');if(ul.firstChild&&ul.firstChild.classList&&ul.firstChild.classList.contains('mute'))ul.innerHTML='';
+  const li=document.createElement('li');const t=new Date();
+  const cells=[t.toLocaleTimeString('en-US',{hour12:false}),e.name,pxFmt(p),(isBuy?'BUY ':'SELL ')+fmt(usd,false)];
+  cells.forEach((c,i)=>{const el=document.createElement(i===3?'b':'span');el.textContent=c;if(i===0||i===2)el.className='mute';if(i===3)el.className=isBuy?'buy':'sell';li.appendChild(el)});
+  ul.prepend(li);while(ul.children.length>50)ul.lastChild.remove();
+}
+
+function regimeText(pct,vol){if(vol<1)return['Warming up…',''];
+  if(pct>=0.62)return['Strong buying','buy'];if(pct>=0.54)return['Buyers in control','buy'];
+  if(pct<=0.38)return['Strong selling','sell'];if(pct<=0.46)return['Sellers in control','sell'];return['Balanced','']}
+
+function renderPressure(){
+  const o=sum(nowS()-pwin*60+1),vol=o.b+o.s,pct=vol?o.b/vol:0.5;
+  const [t,c]=regimeText(pct,vol);const r=$('regime');r.textContent=t;r.className='regime big '+c;
+  $('gB').style.width=(pct*100)+'%';$('gS').style.width=((1-pct)*100)+'%';
+  $('gBl').textContent=`Buyers ${(pct*100).toFixed(1)}% · ${fmt(o.b,false)}`;$('gSl').textContent=`Sellers ${((1-pct)*100).toFixed(1)}% · ${fmt(o.s,false)}`;
+  setNum($('net'),o.b-o.s);$('net').classList.add('net','big');
+  setNum($('nSpot'),o.sb-o.ss);setNum($('nPerp'),o.pb-o.ps);$('nVol').textContent=fmt(vol,false);
+  $('vWin').textContent=pwin===60?'1h':pwin+'m';
+  $('venues').innerHTML=EX.map(e=>{const x=o.ex[e.id]||[0,0],n=x[0]-x[1],v=x[0]+x[1];
+    return `<tr><td>${e.name}${e.status==='live'?'':' <span class="sell" style="font-size:12px">'+(e.status==='connecting'?'…':'offline')+'</span>'}</td><td>${fmt(x[0],false)}</td><td>${fmt(x[1],false)}</td><td class="${cls(n)}">${fmt(n)}</td><td class="hide-s">${v?(x[0]/v*100).toFixed(0)+'%':'—'}</td></tr>`}).join('');
+}
+function renderTiles(){
+  $('tiles').innerHTML=[[1,'1 min'],[5,'5 min'],[15,'15 min'],[60,'1 hour']].map(([m,l])=>{const o=sum(nowS()-m*60+1),v=o.b+o.s,p=v?o.b/v:.5,n=o.b-o.s;
+    const enough=(Date.now()-started)/60000>=m;
+    return `<div class="card tile"><h2>${l} net</h2><div class="big ${cls(n)}">${fmt(n)}</div><div class="bar"><div style="width:${(p*100).toFixed(1)}%"></div></div><div class="mute" style="font-size:12px;margin-top:6px">${(p*100).toFixed(1)}% buyers${enough?'':' · partial window'}</div></div>`}).join('');
+}
+let qOpenPx=0,qStart=0;
+function renderQuarter(){
+  const now=Date.now(),qs=Math.floor(now/900000)*900000;
+  if(qs!==qStart){qStart=qs;qOpenPx=0}
+  if(!qOpenPx&&price&&(now-started<5000||qs>=started))qOpenPx=price;
+  const left=qs+900000-now,mm=Math.floor(left/60000),ss=Math.floor(left%60000/1000);
+  $('cd').textContent=`${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+  const d=new Date(qs),e=new Date(qs+900000),f=x=>x.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+  $('qLbl').textContent=`${f(d)} – ${f(e)}`;
+  const o=sum(Math.floor(qs/1000)),v=o.b+o.s;
+  setNum($('qNet'),o.b-o.s);$('qPct').textContent=v?(o.b/v*100).toFixed(1)+'%':'—';
+  const partial=qs<started;
+  $('qOpen').textContent=qOpenPx?pxFmt(qOpenPx)+(partial?' *':''):'—';
+  const dp=qOpenPx&&price?price-qOpenPx:0;$('qPx').textContent=qOpenPx?(dp>=0?'+':'−')+'$'+Math.abs(dp).toFixed(1):'—';$('qPx').className=cls(dp);
+  if(partial&&qOpenPx)$('qOpen').title='Page opened mid-candle: this is the first price seen, not the true open';
+  // divergence over 5 minutes
+  const g=sum(nowS()-299),dv=$('divg');
+  if((Date.now()-started)<240000||!g.first){dv.textContent='Divergence check needs ~5 minutes of data.';return}
+  const pc=g.last-g.first,cv=g.b-g.s,vol=g.b+g.s,pctMove=pc/g.first*100,flow=vol?cv/vol:0;
+  if(pctMove>0.05&&flow<-0.06)dv.innerHTML='<b class="sell">Bearish divergence:</b> price up '+pctMove.toFixed(2)+'% in 5m while takers net sold. Rally is being sold into.';
+  else if(pctMove<-0.05&&flow>0.06)dv.innerHTML='<b class="buy">Bullish divergence:</b> price down '+Math.abs(pctMove).toFixed(2)+'% in 5m while takers net bought. Selling is being absorbed.';
+  else if(Math.abs(pctMove)<0.03&&Math.abs(flow)>0.12)dv.innerHTML='<b>Absorption:</b> heavy one-sided flow ('+(flow>0?'buying':'selling')+') but price barely moved. Watch for a break.';
+  else dv.innerHTML='<span class="mute">No divergence: price and CVD agree over the last 5 minutes.</span>';
+}
+
+// ---------- chart ----------
+const cv=$('cv'),ctx=cv.getContext('2d'),fig=$('fig'),tip=$('tip');let series=[],hoverX=null;
+function build(){
+  const end=nowS(),start=Math.max(end-cwin*60+1,order.length?order[0]:end);series=[];let c=0,sp=0,pp=0,lastPx=0;
+  for(let t=start;t<=end;t++){const b=B.get(t);if(b){c+=b.b-b.s;sp+=b.sb-b.ss;pp+=b.pb-b.ps;lastPx=b.px}series.push({t,c,sp,pp,px:lastPx||null,d:b?b.b-b.s:0})}
+}
+function draw(){
+  const W=fig.clientWidth,H=fig.clientHeight,dpr=window.devicePixelRatio||1;
+  if(cv.width!==W*dpr||cv.height!==H*dpr){cv.width=W*dpr;cv.height=H*dpr}
+  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
+  const L=W<520?60:66,R=W<520?52:70,T=10,LH=(H-30)*0.72,BT=T+LH+12,BH=H-30-LH-12,N=series.length;
+  ctx.font='11px Inter,sans-serif';ctx.fillStyle='#8592a3';
+  const xs=i=>L+(W-L-R)*i/Math.max(N-1,1);
+  let mn=0,mx=0,pmn=Infinity,pmx=-Infinity;
+  for(const s of series){mn=Math.min(mn,s.c,s.sp,s.pp);mx=Math.max(mx,s.c,s.sp,s.pp);if(s.px){pmn=Math.min(pmn,s.px);pmx=Math.max(pmx,s.px)}}
+  if(mx-mn<1){mx+=1;mn-=1}const pad=(mx-mn)*0.08;mx+=pad;mn-=pad;
+  const ys=v=>T+LH*(1-(v-mn)/(mx-mn));
+  if(pmn===Infinity){ctx.fillText('Waiting for trades…',L+10,T+20);return}
+  if(pmx-pmn<1){pmx+=5;pmn-=5}const ppad=(pmx-pmn)*0.08;pmx+=ppad;pmn-=ppad;
+  const yp=v=>T+LH*(1-(v-pmn)/(pmx-pmn));
+  // grid + axes
+  ctx.strokeStyle='#1f2733';ctx.lineWidth=1;ctx.textBaseline='middle';
+  for(let k=0;k<=4;k++){const y=T+LH*k/4;ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(W-R,y);ctx.stroke();
+    ctx.textAlign='right';ctx.fillText(fmt(mx-(mx-mn)*k/4),L-6,y);ctx.textAlign='left';ctx.fillText(Math.round(pmx-(pmx-pmn)*k/4).toLocaleString(),W-R+6,y)}
+  ctx.strokeStyle='#3a4655';ctx.setLineDash([3,3]);ctx.beginPath();ctx.moveTo(L,ys(0));ctx.lineTo(W-R,ys(0));ctx.stroke();ctx.setLineDash([]);
+  // time ticks
+  ctx.textAlign='center';ctx.textBaseline='top';const tk=W<520?3:6;
+  for(let k=0;k<=tk;k++){const i=Math.round((N-1)*k/tk),s=series[i];if(!s)continue;ctx.fillText(new Date(s.t*1000).toLocaleTimeString('en-US',N<600?{hour:'numeric',minute:'2-digit',second:'2-digit'}:{hour:'numeric',minute:'2-digit'}),Math.min(Math.max(xs(i),L+20),W-R-20),H-16)}
+  // price
+  const line=(key,yf,col,w,dash)=>{ctx.strokeStyle=col;ctx.lineWidth=w;ctx.setLineDash(dash||[]);ctx.beginPath();let on=false;
+    series.forEach((s,i)=>{const v=s[key];if(v==null)return;const x=xs(i),y=yf(v);on?ctx.lineTo(x,y):ctx.moveTo(x,y);on=true});ctx.stroke();ctx.setLineDash([])};
+  line('px',yp,'#5d6b7d',1.2,[4,3]);line('sp',ys,'#5aa9ff',1.2);line('pp',ys,'#b18cff',1.2);line('c',ys,'#f7931a',2.4);
+  // delta bars
+  const slices=W<520?40:80,per=Math.max(1,Math.ceil(N/slices)),bars=[];
+  for(let i=0;i<N;i+=per){let d=0;for(let j=i;j<Math.min(i+per,N);j++)d+=series[j].d;bars.push([i,d])}
+  const bm=Math.max(1,...bars.map(b=>Math.abs(b[1]))),mid=BT+BH/2,bw=Math.max(1,(W-L-R)/bars.length-1.5);
+  ctx.strokeStyle='#1f2733';ctx.beginPath();ctx.moveTo(L,mid);ctx.lineTo(W-R,mid);ctx.stroke();
+  for(const [i,d] of bars){const h=(BH/2-2)*Math.abs(d)/bm;ctx.fillStyle=d>=0?'#18c784':'#f0434f';ctx.fillRect(xs(i),d>=0?mid-h:mid,bw,h)}
+  ctx.textAlign='right';ctx.textBaseline='middle';ctx.fillStyle='#8592a3';ctx.fillText('Δ '+fmt(bm,false),L-6,BT+6);
+  // crosshair
+  if(hoverX!=null&&N){const i=Math.round((hoverX-L)/(W-L-R)*(N-1));if(i>=0&&i<N){const s=series[i],x=xs(i);
+    ctx.strokeStyle='#8592a3';ctx.beginPath();ctx.moveTo(x,T);ctx.lineTo(x,H-22);ctx.stroke();
+    tip.style.display='block';tip.textContent='';
+    [[new Date(s.t*1000).toLocaleTimeString('en-US',{hour12:false}),''],['CVD '+fmt(s.c),cls(s.c)],['Spot '+fmt(s.sp)+' · Perp '+fmt(s.pp),''],['Price '+pxFmt(s.px),'']].forEach(([t,c])=>{const d=document.createElement('div');d.textContent=t;d.className=c;tip.appendChild(d)});
+    tip.style.left=Math.min(x+12,W-tip.offsetWidth-4)+'px';tip.style.top='12px'}}else tip.style.display='none';
+}
+cv.addEventListener('pointermove',e=>{hoverX=e.offsetX;draw()});cv.addEventListener('pointerleave',()=>{hoverX=null;draw()});
+const ro=new ResizeObserver(()=>draw());ro.observe(fig);
+
+function seg(id,fn){$(id).addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;[...$(id).children].forEach(x=>x.classList.toggle('on',x===b));fn(+b.dataset.m);tick()})}
+seg('pwin',m=>pwin=m);seg('cwin',m=>cwin=m);
+$('thr').addEventListener('change',e=>thr=+e.target.value);
+
+function tick(){
+  $('price').textContent=pxFmt(price);$('pxSrc').textContent=price?'via '+pxSrc:'waiting for trades';
+  document.title=price?`${Math.round(price).toLocaleString()} · BTC CVD`:'BTC CVD Watch';
+  renderPressure();renderTiles();renderQuarter();build();draw();
+}
+setTimeout(()=>{if(price)return;let framed=false;try{framed=window.self!==window.top}catch(_){framed=true}
+  const st=EX.map(e=>e.name+': '+(e.status==='live'?'connected':e.status==='connecting'?'still connecting':'blocked')).join(' · ');
+  $('warnWhy').textContent=(framed?'This page is running inside a preview frame, which blocks live feeds. Open the page link directly in a browser tab. ':'Your network, firewall or ad blocker may be blocking the exchange connections. ')+'Status: '+st;
+  $('warn').style.display='block'},10000);setInterval(()=>{if(price)$('warn').style.display='none'},2000);
+setInterval(tick,1000);chips();EX.forEach(connect);tick();
+
+// ---------- CoinGlass ----------
+let cgTimer=null;
+try{const k=localStorage.getItem('cgKey');if(k)$('cgKey').value=k;const s=JSON.parse(localStorage.getItem('cgCfg')||'{}');if(s.m)$('cgMkt').value=s.m;if(s.e)$('cgEx').value=s.e;if(s.i)$('cgIv').value=s.i}catch(_){}
+async function cgPoll(){
+  const key=$('cgKey').value.trim(),m=$('cgMkt').value,ex=$('cgEx').value.replace(/\s+/g,''),iv=$('cgIv').value,st=$('cgStat');
+  const url=`https://open-api-v4.coinglass.com/api/${m}/aggregated-cvd/history?exchange_list=${encodeURIComponent(ex)}&symbol=BTC&interval=${iv}&limit=120`;
+  try{const r=await fetch(url,{headers:{'CG-API-KEY':key,accept:'application/json'}});
+    if(!r.ok){st.textContent='CoinGlass HTTP '+r.status+(r.status===401||r.status===403?' (check key or plan)':'');st.className='sell';return}
+    const j=await r.json();if(String(j.code)!=='0'||!Array.isArray(j.data)||!j.data.length){st.textContent='CoinGlass: '+(j.msg||'no data')+' (your plan may not include '+iv+' CVD)';st.className='sell';return}
+    const rows=j.data.map(x=>({b:+(x.agg_taker_buy_vol??x.taker_buy_vol??0),s:+(x.agg_taker_sell_vol??x.taker_sell_vol??0),c:+(x.cum_vol_delta??0)}));
+    const last=rows[rows.length-1],v=last.b+last.s;
+    $('cgOut').style.display='grid';setNum($('cgNet'),last.b-last.s);$('cgPct').textContent=v?(last.b/v*100).toFixed(1)+'%':'—';setNum($('cgCvd'),last.c-rows[0].c);
+    spark(rows.map(x=>x.c));st.textContent='Live · updated '+new Date().toLocaleTimeString('en-US');st.className='buy';
+  }catch(err){st.textContent='Could not reach CoinGlass from this browser (network or CORS block)';st.className='sell'}
+}
+function spark(vals){const c=$('cgSpark'),W=c.clientWidth,H=c.clientHeight,d=window.devicePixelRatio||1;c.width=W*d;c.height=H*d;const g=c.getContext('2d');g.setTransform(d,0,0,d,0,0);
+  const mn=Math.min(...vals),mx=Math.max(...vals)||1,rg=mx-mn||1;g.strokeStyle='#f7931a';g.lineWidth=2;g.beginPath();
+  vals.forEach((v,i)=>{const x=W*i/(vals.length-1||1),y=H-4-(H-8)*(v-mn)/rg;i?g.lineTo(x,y):g.moveTo(x,y)});g.stroke()}
+$('cgForm').addEventListener('submit',e=>{e.preventDefault();
+  if(cgTimer){clearInterval(cgTimer);cgTimer=null;$('cgBtn').textContent='Connect';$('cgStat').textContent='Stopped';$('cgStat').className='mute';return}
+  if(!$('cgKey').value.trim()){$('cgStat').textContent='Paste your API key first';$('cgStat').className='sell';return}
+  try{localStorage.setItem('cgKey',$('cgKey').value.trim());localStorage.setItem('cgCfg',JSON.stringify({m:$('cgMkt').value,e:$('cgEx').value,i:$('cgIv').value}))}catch(_){}
+  $('cgBtn').textContent='Stop';$('cgStat').textContent='Connecting…';cgPoll();cgTimer=setInterval(cgPoll,30000)});
+// ---------- ETF flows ----------
+let etfTimer=null;
+async function etfLoad(){
+  const key=$('cgKey').value.trim(),st=$('etfStat');
+  if(!key){st.textContent='Optional: add a CoinGlass key (any plan) below for official daily totals';st.className='mute';return}
+  st.textContent='Loading…';st.className='mute';
+  try{const r=await fetch('https://open-api-v4.coinglass.com/api/etf/bitcoin/flow-history',{headers:{'CG-API-KEY':key,accept:'application/json'}});
+    if(!r.ok){st.textContent='CoinGlass HTTP '+r.status;st.className='sell';return}
+    const j=await r.json();if(String(j.code)!=='0'||!Array.isArray(j.data)||!j.data.length){st.textContent='CoinGlass: '+(j.msg||'no ETF data');st.className='sell';return}
+    const d=j.data.filter(x=>x&&x.timestamp!=null).sort((a,b)=>a.timestamp-b.timestamp).filter(x=>x.flow_usd!=null);
+    const last=d[d.length-1],day=t=>new Date(+t).toLocaleDateString('en-US',{month:'short',day:'numeric',timeZone:'UTC'});
+    const tot=n=>d.slice(-n).reduce((a,x)=>a+(+x.flow_usd||0),0);
+    $('etfBody').style.display='';$('etfDayL').textContent=day(last.timestamp);setNum($('etfDay'),+last.flow_usd);
+    setNum($('etf5'),tot(5));setNum($('etf20'),tot(20));setNum($('etfCum'),tot(d.length));
+    let k=0;const sg=Math.sign(+last.flow_usd);for(let i=d.length-1;i>=0&&Math.sign(+d[i].flow_usd)===sg&&sg!==0;i--)k++;
+    $('etfStreak').textContent=sg?k+' day'+(k>1?'s':'')+' of '+(sg>0?'inflows':'outflows'):'Flat';$('etfStreak').className=sg>0?'buy':sg<0?'sell':'';
+    const w=d.slice(-20),m=Math.max(1,...w.map(x=>Math.abs(+x.flow_usd)));
+    $('etfBars').innerHTML=w.map((x,i)=>{const v=+x.flow_usd,h=(Math.abs(v)/m*100).toFixed(1);
+      return `<div class="c" title="${day(x.timestamp)}: ${fmt(v)}"><div class="u">${v>0?`<i style="height:${h}%"></i>`:''}</div><div class="d">${v<0?`<i style="height:${h}%"></i>`:''}</div><span>${(w.length-1-i)%5===0?day(x.timestamp):''}</span></div>`}).join('');
+    $('etfTL').textContent='By fund, '+day(last.timestamp);
+    const esc=t=>String(t).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
+    const f=(last.etf_flows||[]).map(x=>({t:x.etf_ticker,v:x.flow_usd==null?null:+x.flow_usd})).sort((a,b)=>Math.abs(b.v||0)-Math.abs(a.v||0));
+    $('etfT').innerHTML=f.map(x=>`<tr><td>${esc(x.t)}</td><td class="${x.v==null?'mute':cls(x.v)}">${x.v==null?'no data':fmt(x.v)}</td></tr>`).join('')||'<tr><td class="mute">No per-fund data</td></tr>';
+    st.textContent='Updated '+new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});st.className='buy';
+  }catch(err){st.textContent='Could not reach CoinGlass from this browser (network or CORS block)';st.className='sell'}
+}
+$('etfBtn').addEventListener('click',()=>{try{localStorage.setItem('cgKey',$('cgKey').value.trim())}catch(_){}etfLoad()});
+$('cgKey').addEventListener('change',etfLoad);
+etfLoad();etfTimer=setInterval(etfLoad,900000);
+// ---------- US demand / Coinbase premium ----------
+const prem=[];const REF=[['bins','Binance spot'],['okx','OKX perp'],['byb','Bybit perp'],['binf','Binance perp']];
+function etNow(){const p=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',weekday:'short',hour:'numeric',minute:'numeric',second:'numeric',hourCycle:'h23'}).formatToParts(new Date()).map(x=>[x.type,x.value]));return{wd:p.weekday,mins:+p.hour*60+ +p.minute,sec:+p.second}}
+function usTick(){
+  const cb=EX.find(e=>e.id==='cb'),ref=REF.map(([id,n])=>[EX.find(e=>e.id===id),n]).find(([e])=>e.status==='live'&&e.px);
+  const t=nowS();
+  if(cb.status==='live'&&cb.px&&ref){prem.push({t,v:cb.px-ref[0].px,r:ref[0].px});while(prem.length&&prem[0].t<t-3600)prem.shift();$('premRef').textContent='Coinbase BTC-USD vs '+ref[1]+(ref[1].includes('perp')?' (perp basis adds a little noise)':'')}
+  const rec=prem.filter(x=>x.t>t-30);
+  if(rec.length){const v=rec.reduce((a,x)=>a+x.v,0)/rec.length,pc=v/rec[rec.length-1].r*100,el=$('prem');
+    el.textContent=(v>=0?'+':'−')+'$'+Math.abs(v).toFixed(1)+'  '+(pc>=0?'+':'−')+Math.abs(pc).toFixed(3)+'%';el.className='big '+cls(v);
+    const tx=$('premTxt');tx.textContent=pc>0.02?'US buyers paying up: institutional/ETF-style demand':pc<-0.02?'US discount: US side selling or absent':'Neutral: no clear US-led demand';tx.className=pc>0.02?'buy':pc<-0.02?'sell':'mute'}
+  else if(cb.status!=='live')$('premTxt').textContent='Waiting for Coinbase feed';
+  else if(!ref)$('premTxt').textContent='No offshore feed reachable, premium unavailable';
+  // market hours (ET weekdays 9:30-16:00)
+  const et=etNow(),wk=!['Sat','Sun'].includes(et.wd),open=wk&&et.mins>=570&&et.mins<960;
+  const m=$('mkt');
+  if(open){const l=960-et.mins;m.textContent='US market open · closes in '+Math.floor(l/60)+'h '+(l%60)+'m';m.className='buy'}else{m.textContent='US market closed · ETFs not trading';m.className='mute'}
+  if(open){const since=t-((et.mins-570)*60+et.sec),o=sum(Math.max(since,Math.floor(started/1000)));setNum($('usSess'),o.ub-o.us);$('usSessL').textContent='US session net'+(since*1000<started?' (since page opened)':'')}
+  else{$('usSess').textContent='Closed';$('usSess').className='mute'}
+  const a=sum(t-899),b=sum(t-3599),v=b.ub+b.us;setNum($('us15'),a.ub-a.us);setNum($('us60'),b.ub-b.us);$('usPct').textContent=v?(b.ub/v*100).toFixed(1)+'%':'—';
+  // sparkline
+  const c=$('premSpark'),W=c.clientWidth,H=c.clientHeight,d=window.devicePixelRatio||1;if(!W)return;c.width=W*d;c.height=H*d;const g=c.getContext('2d');g.setTransform(d,0,0,d,0,0);
+  if(prem.length<2){g.fillStyle='#8592a3';g.font='12px Inter,sans-serif';g.fillText('Collecting…',4,20);return}
+  const sm=prem.map((x,i)=>{let s2=0,n=0;for(let j=Math.max(0,i-9);j<=i;j++){s2+=prem[j].v;n++}return{t:x.t,v:s2/n}});
+  let mx=Math.max(1,...sm.map(x=>Math.abs(x.v)))*1.1;const y=v=>H/2-(H/2-4)*v/mx,t0=Math.max(t-3600,sm[0].t),span=Math.max(60,t-t0),xx=tt=>W*(tt-t0)/span;
+  g.strokeStyle='#3a4655';g.setLineDash([3,3]);g.beginPath();g.moveTo(0,H/2);g.lineTo(W,H/2);g.stroke();g.setLineDash([]);
+  g.fillStyle='#8592a3';g.font='10px Inter,sans-serif';g.fillText('+$'+mx.toFixed(0),2,10);g.fillText('−$'+mx.toFixed(0),2,H-3);
+  g.lineWidth=2;for(let i=1;i<sm.length;i++){g.strokeStyle=sm[i].v>=0?'#18c784':'#f0434f';g.beginPath();g.moveTo(xx(sm[i-1].t),y(sm[i-1].v));g.lineTo(xx(sm[i].t),y(sm[i].v));g.stroke()}
+}
+setInterval(usTick,1000);
+}
+</script>
+</body>
+</html>
