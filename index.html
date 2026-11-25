@@ -67,6 +67,14 @@ select,input{background:#0d1218;color:var(--ink);border:1px solid var(--line);bo
 .note{font-size:12px;color:var(--mute);margin-top:10px}
 @media(max-width:900px){.r1,.r3{grid-template-columns:minmax(0,1fr)}.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.form{grid-template-columns:1fr 1fr}#cgOut{grid-template-columns:1fr 1fr}}
 @media(max-width:480px){.chips{margin-left:0}table{font-size:13px}.hide-s{display:none}}
+#sigCard{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px 22px;align-items:center;margin-bottom:14px;border-width:2px}
+#sigWord{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:clamp(44px,8vw,68px);line-height:1;padding:10px 22px;border-radius:12px;background:#1d2530;color:var(--mute);text-align:center;min-width:180px}
+#sigCard.b{border-color:var(--buy)}#sigCard.b #sigWord{background:var(--buy);color:#04130c}
+#sigCard.s{border-color:var(--sell)}#sigCard.s #sigWord{background:var(--sell);color:#1a0406}
+#sigWhy{font-size:17px;line-height:1.4}#sigWrong{font-size:15px;margin-top:4px}
+#sigLog{list-style:none;margin:0;padding:0;font-size:13px;min-width:210px}#sigLog li{display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px solid #18202a;white-space:nowrap}
+.tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;border:1px solid var(--line);margin-right:6px}
+@media(max-width:900px){#sigCard{grid-template-columns:minmax(0,1fr)}#sigWord{min-width:0}}
 #absHist{width:100%;height:90px;display:block}
 .absg{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) minmax(0,1.2fr);gap:20px;align-items:start}
 .meter{height:10px;border-radius:5px;background:#222;overflow:hidden;margin:8px 0 4px}.meter div{height:100%;transition:width .4s}
@@ -94,6 +102,17 @@ select,input{background:#0d1218;color:var(--ink);border:1px solid var(--line);bo
   <div><div id="price" class="big">—</div><div id="pxSrc" class="mute" style="font-size:12px">waiting for trades</div></div>
   <div class="chips" id="chips"></div>
 </header>
+
+<section class="card" id="sigCard">
+  <div id="sigWord">WAIT</div>
+  <div>
+    <div><span class="tag" id="sigTag">Calibrating</span><span class="mute" id="sigAge" style="font-size:13px"></span></div>
+    <div id="sigWhy" style="margin-top:6px">Learning normal price impact. Signals start after about 10 minutes.</div>
+    <div id="sigWrong" class="mute"></div>
+    <button type="button" id="sndBtn" class="tag" style="background:none;color:var(--mute);cursor:pointer;min-height:32px;margin-top:8px">Sound alerts: off</button>
+  </div>
+  <div><div class="mute" style="font-size:12px;margin-bottom:4px">Recent signals · move since</div><ul id="sigLog"><li class="mute">None yet</li></ul></div>
+</section>
 
 <div class="row r1">
   <section class="card">
@@ -375,7 +394,7 @@ function draw(){
   ctx.strokeStyle='#3a4655';ctx.setLineDash([3,3]);ctx.beginPath();ctx.moveTo(L,ys(0));ctx.lineTo(W-R,ys(0));ctx.stroke();ctx.setLineDash([]);
   // time ticks
   ctx.textAlign='center';ctx.textBaseline='top';const tk=W<520?3:6;
-  for(let k=0;k<=tk;k++){const i=Math.round((N-1)*k/tk),s=series[i];if(!s)continue;ctx.fillText(new Date(s.t*1000).toLocaleTimeString('en-US',N<600?{hour:'numeric',minute:'2-digit',second:'2-digit'}:{hour:'numeric',minute:'2-digit'}),Math.min(Math.max(xs(i),L+20),W-R-20),H-16)}
+  for(let k=0;k<=tk;k++){const i=Math.round((N-1)*k/tk),s=series[i];if(!s)continue;ctx.fillText(new Date(s.t*1000).toLocaleTimeString('en-US',N<600&&W>=520?{hour:'numeric',minute:'2-digit',second:'2-digit'}:{hour:'numeric',minute:'2-digit'}).replace(W<520?/ ?[AP]M/:/$^/,''),Math.min(Math.max(xs(i),L+34),W-R-34),H-16)}
   // price
   const line=(key,yf,col,w,dash)=>{ctx.strokeStyle=col;ctx.lineWidth=w;ctx.setLineDash(dash||[]);ctx.beginPath();let on=false;
     series.forEach((s,i)=>{const v=s[key];if(v==null)return;const x=xs(i),y=yf(v);on?ctx.lineTo(x,y):ctx.moveTo(x,y);on=true});ctx.stroke();ctx.setLineDash([])};
@@ -387,6 +406,9 @@ function draw(){
   ctx.strokeStyle='#1f2733';ctx.beginPath();ctx.moveTo(L,mid);ctx.lineTo(W-R,mid);ctx.stroke();
   for(const [i,d] of bars){const h=(BH/2-2)*Math.abs(d)/bm;ctx.fillStyle=d>=0?'#18c784':'#f0434f';ctx.fillRect(xs(i),d>=0?mid-h:mid,bw,h)}
   ctx.textAlign='right';ctx.textBaseline='middle';ctx.fillStyle='#8592a3';ctx.fillText('Δ '+fmt(bm,false),L-6,BT+6);
+  // signal markers
+  if(N){const t0=series[0].t;for(const g of sigLog){const i=Math.floor(g.t/1000)-t0;if(i<0||i>=N)continue;const x=xs(i),up=g.side>0,y=up?T+LH-4:T+12;
+    ctx.fillStyle=up?'#18c784':'#f0434f';ctx.beginPath();if(up){ctx.moveTo(x,y-12);ctx.lineTo(x-7,y);ctx.lineTo(x+7,y)}else{ctx.moveTo(x,y+12);ctx.lineTo(x-7,y);ctx.lineTo(x+7,y)}ctx.fill()}}
   // crosshair
   if(hoverX!=null&&N){const i=Math.round((hoverX-L)/(W-L-R)*(N-1));if(i>=0&&i<N){const s=series[i],x=xs(i);
     ctx.strokeStyle='#8592a3';ctx.beginPath();ctx.moveTo(x,T);ctx.lineTo(x,H-22);ctx.stroke();
@@ -403,7 +425,7 @@ $('thr').addEventListener('change',e=>thr=+e.target.value);
 
 function tick(){
   $('price').textContent=pxFmt(price);$('pxSrc').textContent=price?'via '+pxSrc:'waiting for trades';
-  document.title=price?`${Math.round(price).toLocaleString()} · BTC CVD`:'BTC CVD Watch';
+  
   renderPressure();renderTiles();renderQuarter();build();draw();
 }
 setTimeout(()=>{if(price)return;let framed=false;try{framed=window.self!==window.top}catch(_){framed=true}
@@ -465,7 +487,7 @@ $('etfBtn').addEventListener('click',()=>{try{localStorage.setItem('cgKey',$('cg
 $('cgKey').addEventListener('change',etfLoad);
 etfLoad();etfTimer=setInterval(etfLoad,900000);
 // ---------- US demand / Coinbase premium ----------
-const prem=[];const REF=[['bins','Binance spot'],['okx','OKX perp'],['byb','Bybit perp'],['binf','Binance perp']];
+const sigLog=[];const prem=[];const REF=[['bins','Binance spot'],['okx','OKX perp'],['byb','Bybit perp'],['binf','Binance perp']];
 function etNow(){const p=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',weekday:'short',hour:'numeric',minute:'numeric',second:'numeric',hourCycle:'h23'}).formatToParts(new Date()).map(x=>[x.type,x.value]));return{wd:p.weekday,mins:+p.hour*60+ +p.minute,sec:+p.second}}
 function usTick(){
   const cb=EX.find(e=>e.id==='cb'),ref=REF.map(([id,n])=>[EX.find(e=>e.id===id),n]).find(([e])=>e.status==='live'&&e.px);
@@ -545,6 +567,45 @@ function absTick(){
   const bw=Math.max(2,W/360-1);for(const x of absH){const xx=W*(x.t-(t-3600))/3600,h=(H/2-2)*Math.abs(x.v)/100;g.fillStyle=x.v>0?'#18c784':'#f0434f';g.fillRect(xx,x.v>0?H/2-h:H/2,bw,h)}
 }
 setInterval(absTick,1000);
+// ---------- BUY / SELL signal ----------
+let sig={side:0,kind:'',t:0,stop:0,px:0},snd=false,actx=null;
+$('sndBtn').addEventListener('click',()=>{snd=!snd;$('sndBtn').textContent='Sound alerts: '+(snd?'on':'off');
+  try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();actx.resume();if(snd)beep(1)}catch(_){}});
+function beep(side){if(!snd||!actx)return;try{const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=side>0?880:330;g.gain.value=0.15;o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+0.35)}catch(_){}}
+function setSig(side,kind,stop,extra){
+  if(sig.side===side&&sig.kind===kind){if(kind==='absorb')sig.stop=stop;sig.seen=Date.now();Object.assign(sig,extra||{});return}
+  sig={side,kind,t:Date.now(),seen:Date.now(),stop,px:price,...(extra||{})};
+  if(side){sigLog.unshift({side,kind,t:sig.t,px:price});if(sigLog.length>8)sigLog.pop();beep(side)}}
+function sigTick(){
+  const I=impact(),card=$('sigCard');
+  if(!I||!price){card.className='card';$('sigWord').textContent='WAIT';$('sigTag').textContent='Calibrating';return}
+  const a=absCalc(300,I),m1=absCalc(60,I);if(!a||!m1)return;
+  const buf=Math.max(10,price*0.00015),now=Date.now();
+  // follow-through: absorbed level breaks → flip
+  if(sig.kind==='absorb'&&sig.side>0&&price<sig.stop-buf){if(m1.d<0)setSig(-1,'break',sig.stop);else setSig(0,'',0)}
+  else if(sig.kind==='absorb'&&sig.side<0&&price>sig.stop+buf){if(m1.d>0)setSig(1,'squeeze',sig.stop);else setSig(0,'',0)}
+  else if((sig.kind==='break'&&price>sig.stop+buf)||(sig.kind==='squeeze'&&price<sig.stop-buf))setSig(0,'',0);
+  // fresh absorption
+  if(a.z>=0.8&&a.abs>=0.7){if(a.d<0)setSig(1,'absorb',a.lo,{flow:a.d});else setSig(-1,'absorb',a.hi,{flow:a.d})}
+  // expiry: 5 min with no fresh confirmation
+  if(sig.side&&now-sig.seen>300000)setSig(0,'',0);
+  // render
+  const w=$('sigWord'),side=sig.side;card.className='card '+(side>0?'b':side<0?'s':'');w.textContent=side>0?'BUY':side<0?'SELL':'WAIT';
+  const conf=side&&Math.sign(m1.d)===side;
+  $('sigTag').textContent=side?(conf?'Confirmed · last minute agrees':'Early · last minute not yet agreeing'):'No edge';
+  $('sigTag').style.color=side?(conf?'var(--ink)':'var(--btc)'):'var(--mute)';
+  const mv=side?(price-sig.px)*side:0;
+  $('sigAge').textContent=side?` since ${new Date(sig.t).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})} at ${pxFmt(sig.px)} · ${mv>=0?'+':'−'}$${Math.abs(mv).toFixed(0)} in its favor`:'';
+  const why=$('sigWhy'),wr=$('sigWrong'),L=pxFmt(sig.stop);
+  if(side>0&&sig.kind==='absorb'){why.textContent=`Sellers dumped ${fmt(Math.abs(sig.flow||a.d),false)} but price held. A big buyer is defending ${L}.`;wr.textContent=`Wrong if price falls below ${L}.`}
+  else if(side<0&&sig.kind==='absorb'){why.textContent=`Buyers spent ${fmt(Math.abs(sig.flow||a.d),false)} but price stalled. A big seller is capping ${L}.`;wr.textContent=`Wrong if price climbs above ${L}.`}
+  else if(side>0&&sig.kind==='squeeze'){why.textContent=`The seller wall at ${L} broke with buyers pushing. Trapped shorts may have to cover.`;wr.textContent=`Wrong if price drops back below ${L}.`}
+  else if(side<0&&sig.kind==='break'){why.textContent=`The buyer at ${L} gave up and sellers broke through. Support is gone.`;wr.textContent=`Wrong if price gets back above ${L}.`}
+  else{why.textContent='No absorption right now. Nobody is clearly defending a level, so there is no edge.';wr.textContent=''}
+  if(price)document.title=(side>0?'BUY · ':side<0?'SELL · ':'')+Math.round(price).toLocaleString()+' · BTC CVD';
+  $('sigLog').innerHTML=sigLog.length?sigLog.map(g=>{const m=(price-g.px)*g.side;return `<li><span>${new Date(g.t).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})} <b class="${g.side>0?'buy':'sell'}">${g.side>0?'BUY':'SELL'}</b> ${pxFmt(g.px)}</span><span class="${cls(m)}">${m>=0?'+':'−'}$${Math.abs(m).toFixed(0)}</span></li>`}).join(''):'<li class="mute">None yet</li>';
+}
+setInterval(sigTick,1000);
 }
 </script>
 </body>
