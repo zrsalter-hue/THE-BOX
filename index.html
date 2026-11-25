@@ -205,13 +205,13 @@ const setNum=(el,v,sign=true)=>{el.textContent=fmt(v,sign);el.className=el.class
 const pxFmt=p=>p?'$'+p.toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1}):'—';
 const binParse=m=>m.e==='aggTrade'?[[+m.p,+m.q,!m.m]]:null;
 const EX=[
- {id:'binf',name:'Binance perp',type:'perp',url:'wss://fstream.binance.com/ws/btcusdt@aggTrade',parse:binParse},
- {id:'byb',name:'Bybit perp',type:'perp',url:'wss://stream.bybit.com/v5/public/linear',sub:{op:'subscribe',args:['publicTrade.BTCUSDT']},ping:{op:'ping'},parse:m=>m.topic&&Array.isArray(m.data)?m.data.map(t=>[+t.p,+t.v,t.S==='Buy']):null},
- {id:'okx',name:'OKX perp',type:'perp',url:'wss://ws.okx.com:8443/ws/v5/public',sub:{op:'subscribe',args:[{channel:'trades',instId:'BTC-USDT-SWAP'}]},ping:'ping',parse:m=>m.arg&&Array.isArray(m.data)?m.data.map(t=>[+t.px,+t.sz*0.01,t.side==='buy']):null},
- {id:'bins',name:'Binance spot',type:'spot',url:'wss://stream.binance.com:9443/ws/btcusdt@aggTrade',parse:binParse},
- {id:'cb',name:'Coinbase spot',type:'spot',us:1,url:'wss://ws-feed.exchange.coinbase.com',sub:{type:'subscribe',product_ids:['BTC-USD'],channels:['matches']},parse:m=>m.type==='match'?[[+m.price,+m.size,m.side==='sell']]:null},
- {id:'bst',name:'Bitstamp spot',type:'spot',us:1,url:'wss://ws.bitstamp.net',sub:{event:'bts:subscribe',data:{channel:'live_trades_btcusd'}},parse:m=>m.event==='trade'&&m.data?[[+m.data.price,+m.data.amount,m.data.type===0]]:null},
- {id:'krk',name:'Kraken spot',type:'spot',us:1,url:'wss://ws.kraken.com/v2',sub:{method:'subscribe',params:{channel:'trade',symbol:['BTC/USD']}},ping:{method:'ping'},parse:m=>m.channel==='trade'&&m.type==='update'?m.data.map(t=>[+t.price,+t.qty,t.side==='buy']):null},
+ {id:'binf',rest:{u:()=>'https://fapi.binance.com/fapi/v1/aggTrades?symbol=BTCUSDT&limit=100',rows:j=>Array.isArray(j)?j.map(t=>[t.a,+t.p,+t.q,!t.m]):[]},name:'Binance perp',type:'perp',url:'wss://fstream.binance.com/ws/btcusdt@aggTrade',parse:binParse},
+ {id:'byb',rest:{u:()=>'https://api.bybit.com/v5/market/recent-trade?category=linear&symbol=BTCUSDT&limit=100',rows:j=>((j.result||{}).list||[]).map(t=>[t.execId,+t.price,+t.size,t.side==='Buy'])},name:'Bybit perp',type:'perp',url:'wss://stream.bybit.com/v5/public/linear',sub:{op:'subscribe',args:['publicTrade.BTCUSDT']},ping:{op:'ping'},parse:m=>m.topic&&Array.isArray(m.data)?m.data.map(t=>[+t.p,+t.v,t.S==='Buy']):null},
+ {id:'okx',rest:{u:()=>'https://www.okx.com/api/v5/market/trades?instId=BTC-USDT-SWAP&limit=100',rows:j=>(j.data||[]).map(t=>[t.tradeId,+t.px,+t.sz*0.01,t.side==='buy'])},name:'OKX perp',type:'perp',url:'wss://ws.okx.com:8443/ws/v5/public',sub:{op:'subscribe',args:[{channel:'trades',instId:'BTC-USDT-SWAP'}]},ping:'ping',parse:m=>m.arg&&Array.isArray(m.data)?m.data.map(t=>[+t.px,+t.sz*0.01,t.side==='buy']):null},
+ {id:'bins',rest:{u:()=>'https://api.binance.com/api/v3/aggTrades?symbol=BTCUSDT&limit=100',rows:j=>Array.isArray(j)?j.map(t=>[t.a,+t.p,+t.q,!t.m]):[]},name:'Binance spot',type:'spot',url:'wss://stream.binance.com:9443/ws/btcusdt@aggTrade',parse:binParse},
+ {id:'cb',rest:{u:()=>'https://api.exchange.coinbase.com/products/BTC-USD/trades?limit=100',rows:j=>Array.isArray(j)?j.map(t=>[t.trade_id,+t.price,+t.size,t.side==='sell']):[]},name:'Coinbase spot',type:'spot',us:1,url:'wss://ws-feed.exchange.coinbase.com',sub:{type:'subscribe',product_ids:['BTC-USD'],channels:['matches']},parse:m=>m.type==='match'?[[+m.price,+m.size,m.side==='sell']]:null},
+ {id:'bst',rest:{u:()=>'https://www.bitstamp.net/api/v2/transactions/btcusd/?time=minute',rows:j=>Array.isArray(j)?j.map(t=>[t.tid,+t.price,+t.amount,String(t.type)==='0']):[]},name:'Bitstamp spot',type:'spot',us:1,url:'wss://ws.bitstamp.net',sub:{event:'bts:subscribe',data:{channel:'live_trades_btcusd'}},parse:m=>m.event==='trade'&&m.data?[[+m.data.price,+m.data.amount,m.data.type===0]]:null},
+ {id:'krk',rest:{u:e=>'https://api.kraken.com/0/public/Trades?pair=XBTUSD'+(e.since?'&since='+e.since:''),rows:(j,e)=>{const r=j.result||{};if(r.last)e.since=r.last;const k=Object.keys(r).find(x=>x!=='last');return k?r[k].map(t=>[t[2]+':'+t[0]+':'+t[1],+t[0],+t[1],t[3]==='b']):[]}},name:'Kraken spot',type:'spot',us:1,url:'wss://ws.kraken.com/v2',sub:{method:'subscribe',params:{channel:'trade',symbol:['BTC/USD']}},ping:{method:'ping'},parse:m=>m.channel==='trade'&&m.type==='update'?m.data.map(t=>[+t.price,+t.qty,t.side==='buy']):null},
 ];
 const PX_PRI=['cb','binf','byb','okx','bins','bst','krk'];
 const B=new Map(),order=[];const KEEP=4*3600+60;
@@ -226,12 +226,23 @@ function connect(e){
   ws.onmessage=ev=>{let m;try{m=JSON.parse(ev.data)}catch(_){return}const r=e.parse(m);if(!r)return;
     if(e.status!=='live'){e.status='live';chips()}e.last=Date.now();
     for(const [p,q,isBuy] of r){if(p>0&&q>0)add(e,p,q,isBuy)}};
-  ws.onclose=()=>{clearInterval(e.pt);e.status='down';chips();retry(e)};
+  ws.onclose=()=>{clearInterval(e.pt);if(!e.last)e.fails=(e.fails||0)+1;e.status='down';chips();retry(e)};
+  clearTimeout(e.wt);e.wt=setTimeout(()=>{if(!e.last&&!e.polling){e.fails=9;try{ws.close()}catch(_){}}},8000);
   ws.onerror=()=>{try{ws.close()}catch(_){}};
 }
-function retry(e){e.delay=Math.min((e.delay||2000)*1.6,30000);setTimeout(()=>connect(e),e.delay)}
+function retry(e){if(e.polling)return;if(e.fails>=2&&e.rest){startPoll(e);return}e.delay=Math.min((e.delay||2000)*1.6,30000);setTimeout(()=>connect(e),e.delay)}
+function startPoll(e){e.polling=true;e.name=e.name.replace(/ ·.*/,'')+' · polling';e.status='connecting';chips();e.seen=new Set();let first=true;
+  const go=async()=>{try{const r=await fetch(e.rest.u(e),{cache:'no-store'});if(!r.ok)throw 0;const j=await r.json();const rows=e.rest.rows(j,e);
+      const fresh=rows.filter(x=>!e.seen.has(String(x[0])));rows.forEach(x=>e.seen.add(String(x[0])));
+      if(e.seen.size>5000)e.seen=new Set(rows.map(x=>String(x[0])));
+      if(rows.length){if(e.status!=='live'){e.status='live';chips()}e.last=Date.now();
+        if(first&&rows[0])e.px=rows[0][1];
+        if(!first)for(const [,p,q,b] of fresh.reverse())if(p>0&&q>0)add(e,p,q,b)}
+      first=false}
+    catch(_){if(e.status!=='down'){e.status='down';chips()}}
+    setTimeout(go,e.status==='live'?1000:5000)};go()}
 // watchdog: a socket that goes silent for 60s gets recycled
-setInterval(()=>{for(const e of EX)if(e.status==='live'&&Date.now()-e.last>60000){try{e.ws.close()}catch(_){}}},15000);
+setInterval(()=>{for(const e of EX)if(!e.polling&&e.status==='live'&&Date.now()-e.last>60000){try{e.ws.close()}catch(_){}}},15000);
 
 function add(e,p,q,isBuy){
   const usd=p*q,s=Math.floor(Date.now()/1000);
@@ -366,7 +377,7 @@ function tick(){
 }
 setTimeout(()=>{if(price)return;let framed=false;try{framed=window.self!==window.top}catch(_){framed=true}
   const st=EX.map(e=>e.name+': '+(e.status==='live'?'connected':e.status==='connecting'?'still connecting':'blocked')).join(' · ');
-  $('warnWhy').textContent=(framed?'This page is running inside a preview frame, which blocks live feeds. Open the page link directly in a browser tab. ':'Your network, firewall or ad blocker may be blocking the exchange connections. ')+'Status: '+st;
+  $('warnWhy').textContent=(framed?'This page is running inside a preview frame, which blocks live feeds. Open the page link directly in a browser tab. ':'Your network may be blocking crypto exchanges (common on work Wi-Fi). The page will keep retrying with a backup method. Quick test: turn Wi-Fi off on your phone and open this page on cellular. ')+'Status: '+st;
   $('warn').style.display='block'},10000);setInterval(()=>{if(price)$('warn').style.display='none'},2000);
 setInterval(tick,1000);chips();EX.forEach(connect);tick();
 
