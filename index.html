@@ -129,13 +129,24 @@ select,input{background:#0d1218;color:var(--ink);border:1px solid var(--line);bo
   </section>
   <section class="card">
     <div class="head"><h2>Current 15‑minute candle</h2><span class="mute" id="qLbl" style="font-size:13px"></span></div>
-    <div class="mute" style="font-size:12px">Closes in</div>
-    <div id="cd" class="big">--:--</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px 26px;align-items:end">
+      <div><div class="mute" style="font-size:12px">Closes in</div><div id="cd" class="big">--:--</div></div>
+      <div><div class="mute" style="font-size:12px">Strike (Kalshi target) <span class="tag" id="kSrc" style="font-size:11px;padding:1px 7px">…</span></div><div id="kTgt" class="big" style="font-size:clamp(24px,3.4vw,32px)">—</div></div>
+    </div>
+    <div id="kVs" class="big" style="font-size:20px;margin-top:6px">—</div>
+    <div class="kv" style="margin-top:8px">
+      <span class="mute">BTC now (BRTI proxy)</span><b id="kNow">—</b>
+      <span class="mute">Typical move by close</span><b id="kAtr">—</b>
+      <span class="mute">Kalshi odds</span><b id="kOdds">—</b>
+    </div>
+    <div class="div" id="kFinal" style="display:none"></div>
+    <form id="kForm" style="display:flex;gap:8px;margin-top:10px"><input id="kIn" inputmode="decimal" placeholder="Type target from Kalshi" style="flex:1;min-width:0"><button class="btn" type="submit">Set</button></form>
+    <div class="mute" style="font-size:12px;margin-top:4px" id="kNote"></div>
     <div class="kv" style="margin-top:10px">
       <span class="mute">Net delta this candle</span><b id="qNet">—</b>
       <span class="mute">Buyer share</span><b id="qPct">—</b>
       <span class="mute">Price since open</span><b id="qPx">—</b>
-      <span class="mute">Open price</span><b id="qOpen">—</b>
+      <span class="mute">First price seen</span><b id="qOpen">—</b>
     </div>
     <div class="div" id="divg">Divergence check needs ~5 minutes of data.</div>
   </section>
@@ -302,7 +313,7 @@ function add(e,p,q,isBuy){
   const k=e.type==='spot'?'s':'p';
   if(isBuy){b.b+=usd;b[k+'b']+=usd}else{b.s+=usd;b[k+'s']+=usd}
   const x=b.ex[e.id]||(b.ex[e.id]=[0,0]);x[isBuy?0:1]+=usd;if(e.us){if(isBuy)b.ub=(b.ub||0)+usd;else b.us=(b.us||0)+usd}
-  e.px=p;
+  e.px=p;e.lt=Date.now();
   const src=PX_PRI.find(id=>{const z=EX.find(y=>y.id===id);return z.status==='live'&&z.px});
   if(src===e.id||!price){price=p;pxSrc=e.name}
   b.px=price;
@@ -606,6 +617,51 @@ function sigTick(){
   $('sigLog').innerHTML=sigLog.length?sigLog.map(g=>{const m=(price-g.px)*g.side;return `<li><span>${new Date(g.t).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})} <b class="${g.side>0?'buy':'sell'}">${g.side>0?'BUY':'SELL'}</b> ${pxFmt(g.px)}</span><span class="${cls(m)}">${m>=0?'+':'−'}$${Math.abs(m).toFixed(0)}</span></li>`}).join(''):'<li class="mute">None yet</li>';
 }
 setInterval(sigTick,1000);
+// ---------- Kalshi 15m strike ----------
+const KAL='https://api.elections.kalshi.com/trade-api/v2/markets?series_ticker=KXBTC15M&status=open&limit=50';
+let kal={win:0,strike:null,yes:null,no:null,ticker:''},kalErr='',manual={win:0,v:null};const prox=new Map();
+function brti(){const v=['cb','krk','bst'].map(id=>EX.find(e=>e.id===id)).filter(e=>e.px&&e.lt&&Date.now()-e.lt<120000).map(e=>e.px).sort((a,b)=>a-b);
+  if(!v.length)return price||0;const m=v.length>>1;return v.length%2?v[m]:(v[m-1]+v[m])/2}
+async function kalPoll(){try{const r=await fetch(KAL,{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json(),now=Date.now();
+    const ms=(j.markets||[]).filter(m=>m.open_time&&m.close_time);const m=ms.find(m=>Date.parse(m.open_time)<=now&&now<Date.parse(m.close_time));
+    if(m){const ya=parseFloat(m.yes_ask_dollars),na=parseFloat(m.no_ask_dollars);kal={win:Date.parse(m.open_time),strike:m.floor_strike!=null?+m.floor_strike:null,yes:isFinite(ya)?ya:null,no:isFinite(na)?na:null,ticker:String(m.ticker||'')}}
+    kalErr=''}catch(_){kalErr='blocked'}}
+kalPoll();setInterval(kalPoll,10000);
+$('kForm').addEventListener('submit',e=>{e.preventDefault();const v=parseFloat($('kIn').value.replace(/[$,\s]/g,''));if(v>1000){manual={win:Math.floor(Date.now()/900000)*900000,v};$('kIn').value=''}});
+function kalTick(){
+  const now=Date.now(),t=Math.floor(now/1000),qs=Math.floor(now/900000)*900000,close=qs+900000,left=(close-now)/1000,bp=brti();
+  if(bp){prox.set(t,bp);for(const k of prox.keys()){if(k<t-1500)prox.delete(k);else break}}
+  // strike: manual > Kalshi > estimate (avg of BRTI proxy over the 60s before the window opened)
+  let K=null,src='';
+  if(manual.win===qs&&manual.v){K=manual.v;src='you entered'}
+  else if(kal.win===qs&&kal.strike){K=kal.strike;src='Kalshi live'}
+  else{const q0=qs/1000;let sm=0,n=0;for(let k=q0-60;k<q0;k++){const v=prox.get(k);if(v){sm+=v;n++}}
+    if(n>=20){K=sm/n;src='estimate'}else{const v=prox.get(q0)||prox.get(q0+1)||prox.get(q0+2);if(v){K=v;src='estimate'}}}
+  const sEl=$('kSrc');sEl.textContent=src||(kalErr?'type it in':'waiting');sEl.style.color=src==='Kalshi live'?'var(--buy)':src==='estimate'?'var(--btc)':'var(--ink)';
+  $('kTgt').textContent=K?'$'+K.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'—';
+  $('kNow').textContent=bp?'$'+bp.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'—';
+  const vs=$('kVs');
+  if(K&&bp){const d=bp-K;vs.textContent=(d>=0?'UP  +$':'DOWN  −$')+Math.abs(d).toFixed(2)+(d>=0?' above strike':' below strike');vs.className='big '+(d>=0?'buy':'sell')}else{vs.textContent='—';vs.className='big'}
+  // typical move by close: avg 1-min high-low of the proxy over last 5 completed minutes × √minutes left
+  const cur=t-t%60;let rs=[];for(let m=cur-300;m<cur;m+=60){let hi=-Infinity,lo=Infinity;for(let k=m;k<m+60;k++){const v=prox.get(k);if(v){hi=Math.max(hi,v);lo=Math.min(lo,v)}}if(hi>lo)rs.push(hi-lo)}
+  if(rs.length>=3){const atr=rs.reduce((a,b)=>a+b,0)/rs.length,em=atr*Math.sqrt(Math.max(left,1)/60);const d=K&&bp?Math.abs(bp-K):0;
+    $('kAtr').textContent='±$'+em.toFixed(0)+(K&&bp?(d>em?' · strike out of normal reach':' · strike within reach'):'')}else $('kAtr').textContent='Needs 5 min of data';
+  $('kOdds').textContent=kal.win===qs&&kal.yes!=null?`Up ${Math.round(kal.yes*100)}¢ · Down ${Math.round(kal.no*100)}¢`:(kalErr?'Not available here':'—');
+  $('kNote').textContent=src==='Kalshi live'?'Strike and odds from Kalshi KXBTC15M ('+kal.ticker+'). BTC now is a median of Coinbase, Kraken and Bitstamp, close to but not the official BRTI.':
+    kalErr?(src==='estimate'?'Kalshi data is blocked in this browser, so the strike is estimated from Coinbase, Kraken and Bitstamp. Type the real target above for exact distances.':'Kalshi data is blocked in this browser and the page opened mid-window. Type the target from Kalshi above. From the next window on it estimates automatically.'):
+    'Waiting for Kalshi. Until it loads, the strike is an estimate from exchange prices.';
+  // final 60 seconds: settlement = average of 60 one-second RTI readings
+  const fin=$('kFinal');
+  if(left<=60&&K){const c0=close/1000-60;let sm=0,n=0;for(let k=c0;k<=t&&k<close/1000;k++){const v=prox.get(k);if(v){sm+=v;n++}}
+    fin.style.display='block';if(!n){fin.textContent='Final minute: settlement averaging has started.';return}
+    const A=sm/n,rem=60-n,need=rem>0?(60*K-n*A)/rem:null;
+    fin.innerHTML='';const l1=document.createElement('div'),l2=document.createElement('div');
+    l1.textContent=`Settlement window: ${n}/60 seconds averaged · running average $${A.toFixed(2)} (${A>=K?'+':'−'}$${Math.abs(A-K).toFixed(2)} vs strike)`;
+    if(need!=null){const up=bp>=need;l2.textContent=`To finish UP, the last ${rem}s must average at least $${need.toFixed(2)}. BTC is ${up?'above':'below'} that by $${Math.abs(bp-need).toFixed(2)}.`;l2.className=up?'buy':'sell'}
+    else{l2.textContent=A>=K?'Settles UP (estimate)':'Settles DOWN (estimate)';l2.className=A>=K?'buy':'sell'}
+    fin.append(l1,l2)}else fin.style.display='none';
+}
+setInterval(kalTick,1000);
 }
 </script>
 </body>
