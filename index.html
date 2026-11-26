@@ -67,6 +67,15 @@ select,input{background:#0d1218;color:var(--ink);border:1px solid var(--line);bo
 .note{font-size:12px;color:var(--mute);margin-top:10px}
 @media(max-width:900px){.r1,.r3{grid-template-columns:minmax(0,1fr)}.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.form{grid-template-columns:1fr 1fr}#cgOut{grid-template-columns:1fr 1fr}}
 @media(max-width:480px){.chips{margin-left:0}table{font-size:13px}.hide-s{display:none}}
+#edgeCard{margin-bottom:14px;border-width:2px}
+#edgeCard.b{border-color:var(--buy)}#edgeCard.s{border-color:var(--sell)}
+.eg{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) minmax(0,1fr);gap:18px;align-items:start}
+#eAct{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:clamp(30px,5vw,44px);line-height:1.05}
+#eTxt{white-space:pre-wrap;font-size:13.5px;line-height:1.55;background:#0d1218;border:1px solid var(--line);border-radius:8px;padding:10px 12px;min-height:150px;font-variant-numeric:tabular-nums}
+details{margin-top:12px}summary{cursor:pointer;color:var(--mute);font-size:14px;min-height:32px}
+.cfg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:8px}.cfg label{font-size:12px;color:var(--mute);display:grid;gap:4px}
+#logT td{font-size:12.5px}
+@media(max-width:900px){.eg{grid-template-columns:minmax(0,1fr)}}
 #sigCard{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px 22px;align-items:center;margin-bottom:14px;border-width:2px}
 #sigWord{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:clamp(44px,8vw,68px);line-height:1;padding:10px 22px;border-radius:12px;background:#1d2530;color:var(--mute);text-align:center;min-width:180px}
 #sigCard.b{border-color:var(--buy)}#sigCard.b #sigWord{background:var(--buy);color:#04130c}
@@ -102,6 +111,48 @@ select,input{background:#0d1218;color:var(--ink);border:1px solid var(--line);bo
   <div><div id="price" class="big">—</div><div id="pxSrc" class="mute" style="font-size:12px">waiting for trades</div></div>
   <div class="chips" id="chips"></div>
 </header>
+
+<section class="card" id="edgeCard">
+  <div class="head"><h2>Edge scanner · Kalshi BTC 15‑min (alerts only, never trades)</h2>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="tag" id="ntfBtn" style="background:none;color:var(--mute);cursor:pointer;min-height:32px">Phone/desktop notifications: off</button></div></div>
+  <div class="eg">
+    <div>
+      <div id="eAct" class="mute">NO TRADE</div>
+      <div id="eWhy" class="mute" style="font-size:14px;margin-top:6px">Starting up…</div>
+      <div class="kv" style="margin-top:12px">
+        <span class="mute">P(finish UP)</span><b id="mP">—</b>
+        <span class="mute">Distance in vol units</span><b id="mZ">—</b>
+        <span class="mute">Volatility (1‑min σ)</span><b id="mS">—</b>
+      </div>
+    </div>
+    <div><div class="mute" style="font-size:12px;margin-bottom:4px">Latest alert</div><div id="eTxt" class="mute">No alert yet. Alerts fire only when estimated probability beats the executable Kalshi price by more than fees, slippage and your minimum edge.</div></div>
+    <div><table><thead><tr><th></th><th>Fair</th><th>Ask</th><th>Size</th><th>Net edge</th></tr></thead><tbody id="mT"></tbody></table>
+      <div class="mute" style="font-size:12px;margin-top:6px" id="mQ"></div></div>
+  </div>
+  <details><summary>Settings and held position</summary>
+    <form class="cfg" id="cfgF">
+      <label>Minimum net edge (¢)<input id="cMin" inputmode="decimal"></label>
+      <label>Expected slippage (¢)<input id="cSlip" inputmode="decimal"></label>
+      <label>Order size (contracts)<input id="cSize" inputmode="numeric"></label>
+      <label>Max ask to consider (¢)<input id="cMax" inputmode="decimal"></label>
+      <label>Index proxy error ($)<input id="cErr" inputmode="decimal"></label>
+      <label>Exit margin (¢)<input id="cExit" inputmode="decimal"></label>
+    </form>
+    <form class="cfg" id="posF" style="align-items:end">
+      <label>I hold (this window)<select id="pSide"><option value="">Nothing</option><option value="up">UP / Yes</option><option value="down">DOWN / No</option></select></label>
+      <label>Contracts<input id="pQty" inputmode="numeric"></label>
+      <label>Avg price (¢)<input id="pPx" inputmode="decimal"></label>
+      <button class="btn" type="submit">Save position</button>
+    </form>
+    <div class="note">Probabilities are capped at 2–98% for model error. Fees use Kalshi's taker formula 0.07 × P × (1−P) per contract. The index is a median of Coinbase, Kraken and Bitstamp, not the licensed BRTI, so "Index proxy error" widens the model's uncertainty. Positions reset at each new window.</div>
+  </details>
+  <details><summary>Alert log and results (<span id="logN">0</span>)</summary>
+    <div id="logSum" style="font-size:14px;margin:8px 0"></div>
+    <div class="scroll"><table id="logT"><thead><tr><th>Time</th><th>Type</th><th>Side</th><th>Price</th><th>P est.</th><th>Edge</th><th>Result</th><th>P&amp;L/ct</th></tr></thead><tbody></tbody></table></div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button type="button" class="btn" id="logCopy">Copy log as CSV</button><button type="button" class="tag" id="logClr" style="background:none;color:var(--mute);cursor:pointer;min-height:40px">Clear log</button><span id="logMsg" class="mute" style="font-size:13px;align-self:center"></span></div>
+    <div class="note">Every edge alert and every order-flow signal is logged with its inputs, the executable quote and the settled result from Kalshi. Order-flow signals stay "logged only" and do not change the probability until this log shows they help on later data. The log lives in this browser only.</div>
+  </details>
+</section>
 
 <section class="card" id="sigCard">
   <div id="sigWord">WAIT</div>
@@ -586,7 +637,7 @@ function beep(side){if(!snd||!actx)return;try{const o=actx.createOscillator(),g=
 function setSig(side,kind,stop,extra){
   if(sig.side===side&&sig.kind===kind){if(kind==='absorb')sig.stop=stop;sig.seen=Date.now();Object.assign(sig,extra||{});return}
   sig={side,kind,t:Date.now(),seen:Date.now(),stop,px:price,...(extra||{})};
-  if(side){sigLog.unshift({side,kind,t:sig.t,px:price});if(sigLog.length>8)sigLog.pop();beep(side)}}
+  if(side){sigLog.unshift({side,kind,t:sig.t,px:price});try{logFlow(side,kind)}catch(_){}if(sigLog.length>8)sigLog.pop();beep(side)}}
 function sigTick(){
   const I=impact(),card=$('sigCard');
   if(!I||!price){card.className='card';$('sigWord').textContent='WAIT';$('sigTag').textContent='Calibrating';return}
@@ -603,7 +654,7 @@ function sigTick(){
   // render
   const w=$('sigWord'),side=sig.side;card.className='card '+(side>0?'b':side<0?'s':'');w.textContent=side>0?'BUY':side<0?'SELL':'WAIT';
   const conf=side&&Math.sign(m1.d)===side;
-  $('sigTag').textContent=side?(conf?'Confirmed · last minute agrees':'Early · last minute not yet agreeing'):'No edge';
+  $('sigTag').textContent='Order flow (unvalidated) · '+(side?(conf?'confirmed':'early'):'no setup');
   $('sigTag').style.color=side?(conf?'var(--ink)':'var(--btc)'):'var(--mute)';
   const mv=side?(price-sig.px)*side:0;
   $('sigAge').textContent=side?` since ${new Date(sig.t).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})} at ${pxFmt(sig.px)} · ${mv>=0?'+':'−'}$${Math.abs(mv).toFixed(0)} in its favor`:'';
@@ -619,7 +670,7 @@ function sigTick(){
 setInterval(sigTick,1000);
 // ---------- Kalshi 15m strike ----------
 const KAL='https://api.elections.kalshi.com/trade-api/v2/markets?series_ticker=KXBTC15M&status=open&limit=50';
-let kal={win:0,strike:null,yes:null,no:null,ticker:''},kalErr='',manual={win:0,v:null};const prox=new Map();
+let KS={},kal={win:0,strike:null,yes:null,no:null,ticker:''},kalErr='',manual={win:0,v:null};const prox=new Map();
 function brti(){const v=['cb','krk','bst'].map(id=>EX.find(e=>e.id===id)).filter(e=>e.px&&e.lt&&Date.now()-e.lt<120000).map(e=>e.px).sort((a,b)=>a-b);
   if(!v.length)return price||0;const m=v.length>>1;return v.length%2?v[m]:(v[m-1]+v[m])/2}
 async function kalPoll(){try{const r=await fetch(KAL,{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json(),now=Date.now();
@@ -637,7 +688,7 @@ function kalTick(){
   else if(kal.win===qs&&kal.strike){K=kal.strike;src='Kalshi live'}
   else{const q0=qs/1000;let sm=0,n=0;for(let k=q0-60;k<q0;k++){const v=prox.get(k);if(v){sm+=v;n++}}
     if(n>=20){K=sm/n;src='estimate'}else{const v=prox.get(q0)||prox.get(q0+1)||prox.get(q0+2);if(v){K=v;src='estimate'}}}
-  const sEl=$('kSrc');sEl.textContent=src||(kalErr?'type it in':'waiting');sEl.style.color=src==='Kalshi live'?'var(--buy)':src==='estimate'?'var(--btc)':'var(--ink)';
+  KS={K,src,bp,qs,close,left,t};const sEl=$('kSrc');sEl.textContent=src||(kalErr?'type it in':'waiting');sEl.style.color=src==='Kalshi live'?'var(--buy)':src==='estimate'?'var(--btc)':'var(--ink)';
   $('kTgt').textContent=K?'$'+K.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'—';
   $('kNow').textContent=bp?'$'+bp.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'—';
   const vs=$('kVs');
@@ -662,6 +713,119 @@ function kalTick(){
     fin.append(l1,l2)}else fin.style.display='none';
 }
 setInterval(kalTick,1000);
+// ---------- Edge scanner ----------
+const API='https://api.elections.kalshi.com/trade-api/v2';
+const DEF={min:5,slip:1,size:10,max:90,err:8,exit:3};let C={...DEF};
+try{Object.assign(C,JSON.parse(localStorage.getItem('edgeCfg')||'{}'))}catch(_){}
+const CF={cMin:'min',cSlip:'slip',cSize:'size',cMax:'max',cErr:'err',cExit:'exit'};
+for(const [id,k] of Object.entries(CF)){$(id).value=C[k];$(id).addEventListener('change',()=>{const v=parseFloat($(id).value);if(isFinite(v)&&v>=0)C[k]=v;else $(id).value=C[k];try{localStorage.setItem('edgeCfg',JSON.stringify(C))}catch(_){}})}
+let pos={win:0,side:'',qty:0,px:0};
+$('posF').addEventListener('submit',e=>{e.preventDefault();pos={win:KS.qs||0,side:$('pSide').value,qty:parseFloat($('pQty').value)||0,px:(parseFloat($('pPx').value)||0)/100}});
+let book={ticker:'',t:0,yb:null,ybs:0,nb:null,nbs:0};
+async function bookPoll(){const tk=kal.ticker;if(!tk||kal.win!==KS.qs){setTimeout(bookPoll,2000);return}
+  try{const r=await fetch(`${API}/markets/${encodeURIComponent(tk)}/orderbook?depth=5`,{cache:'no-store'});if(!r.ok)throw 0;const j=await r.json(),ob=j.orderbook_fp||{};
+    const best=a=>{let b=null,sz=0;for(const l of (a||[])){const p=parseFloat(l[0]),q=parseFloat(l[1]);if(isFinite(p)&&(b===null||p>b)){b=p;sz=q}}return[b,sz]};
+    const [yb,ybs]=best(ob.yes_dollars),[nb,nbs]=best(ob.no_dollars);book={ticker:tk,t:Date.now(),yb,ybs,nb,nbs}}catch(_){book.err=true}
+  setTimeout(bookPoll,2000)}
+bookPoll();
+const Phi=x=>{const t=1/(1+0.2316419*Math.abs(x)),d=0.3989423*Math.exp(-x*x/2),p=d*t*(0.3193815+t*(-0.3565638+t*(1.781478+t*(-1.821256+t*1.330274))));return x>0?1-p:p};
+const PhiInv=q=>{let lo=-8,hi=8;for(let i=0;i<60;i++){const m=(lo+hi)/2;Phi(m)<q?lo=m:hi=m}return(lo+hi)/2};
+const fee=(p,n)=>Math.ceil(0.07*n*p*(1-p)*10000)/10000/n;
+const c=x=>(x*100).toFixed(1)+'¢';
+function vol(){const t=nowS(),cur=t-t%60,d=[];for(let m=cur-3600;m<cur;m+=60){const a=prox.get(m)||prox.get(m+1),b=prox.get(m+60)||prox.get(m+59);if(a&&b)d.push(b-a)}
+  if(d.length<10)return null;const rms=a=>Math.sqrt(a.reduce((x,y)=>x+y*y,0)/a.length);const sL=rms(d),sS=rms(d.slice(-15));
+  return{s1m:Math.max(sS,0.8*sL),regime:sS>1.3*sL?'high':sS<0.75*sL?'low':'normal',n:d.length}}
+function model(){const {K,bp,close}=KS;if(!K||!bp)return null;const V=vol();if(!V)return null;
+  const v=V.s1m*V.s1m/60,now=Date.now()/1000,cs=close/1000,e=C.err;let mean,varr;
+  if(now<cs-60){const tau=cs-60-now;mean=bp;varr=v*(tau+20)}
+  else{let sm=0,n=0;for(let k=cs-60;k<Math.min(now,cs);k++){const x=prox.get(Math.floor(k));if(x){sm+=x;n++}}const rem=Math.max(0,60-n);mean=n?(sm+rem*bp)/60:bp;varr=Math.pow(rem/60,2)*v*rem/3}
+  const sd=Math.sqrt(varr+e*e),P=Math.min(0.98,Math.max(0.02,Phi((mean-K)/sd)));return{P,mean,sd,sdMove:Math.sqrt(varr),z:varr>0?(bp-K)/Math.sqrt(varr):0,V,K,bp,cs}}
+let active={},lastAlert=null,snap=[];
+function trigger(M,q){const old=snap.find(x=>x.t<=Date.now()-30000);if(!old)return'Edge first crossed the threshold';
+  const dp=M.bp-old.bp,da=q.ask-(q.side==='up'?old.ua:old.da);
+  if(Math.abs(dp)>=Math.max(5,M.V.s1m*0.5))return`BTC moved ${dp>0?'+':'−'}$${Math.abs(dp).toFixed(0)} in 30s while the ${q.side==='up'?'Up':'Down'} ask ${Math.abs(da)>=0.01?`moved ${c(old[q.side==='up'?'ua':'da']||0)}→${c(q.ask)}`:'lagged'}`;
+  if(Math.abs(da)>=0.01)return`${q.side==='up'?'Up':'Down'} ask moved ${c(old[q.side==='up'?'ua':'da']||0)}→${c(q.ask)} while probability held near ${(q.fair*100).toFixed(0)}%`;
+  return'Edge crossed the threshold as time decayed'}
+function fmtAlert(a){return `${a.action} ${a.side==='up'?'ABOVE':'BELOW'} | Strike ${pxFmt(a.K)} | ${a.left}
+Settlement index ${pxFmt(a.idx)} (proxy) | Strike distance ${a.dist>=0?'+':'−'}$${Math.abs(a.dist).toFixed(2)} | ${a.z>=0?'+':''}${a.z.toFixed(2)}σ
+Executable price ${a.action==='BUY'?'ask':'bid'} ${c(a.px)} × ${a.size} | Estimated settlement probability ${(a.p*100).toFixed(1)}%
+Estimated net edge ${(a.edge*100).toFixed(1)}¢ per contract
+Trigger ${a.trigger}
+Invalidation ${a.inval}
+Data timestamp ${new Date(a.t).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',second:'2-digit',timeZoneName:'short'})}`}
+let ntf=false;$('ntfBtn').addEventListener('click',async()=>{try{if(!('Notification' in window))throw 0;const r=await Notification.requestPermission();ntf=r==='granted'}catch(_){ntf=false}
+  $('ntfBtn').textContent='Phone/desktop notifications: '+(ntf?'on':'not available (use sound alerts)')});
+function fire(a){lastAlert=a;$('eTxt').textContent=fmtAlert(a);$('eTxt').className='';addLog({...a,type:'edge'});beep(a.side==='up'?1:-1);
+  if(ntf)try{new Notification(`${a.action} ${a.side==='up'?'ABOVE':'BELOW'} ${pxFmt(a.K)} @ ${c(a.px)}`,{body:`P ${(a.p*100).toFixed(0)}% · edge ${(a.edge*100).toFixed(1)}¢ · ${a.left} left`})}catch(_){}}
+function edgeTick(){
+  const act=$('eAct'),why=$('eWhy'),card=$('edgeCard'),M=model(),now=Date.now();
+  const no=(t)=>{act.textContent='NO TRADE';act.className='mute';why.textContent=t;card.className='card'};
+  if(M){$('mP').textContent=(M.P*100).toFixed(1)+'%';$('mZ').textContent=(M.z>=0?'+':'')+M.z.toFixed(2)+'σ';$('mS').textContent='$'+M.V.s1m.toFixed(0)+' · '+M.V.regime+' regime'}
+  const fresh=book.ticker===kal.ticker&&kal.win===KS.qs&&now-book.t<15000;
+  let rows=[];const q={};
+  if(M&&fresh){const ua=book.nb!=null?1-book.nb:null,da=book.yb!=null?1-book.yb:null;
+    q.up={side:'up',fair:M.P,ask:ua,size:book.nbs,bid:book.yb,bsz:book.ybs};q.down={side:'down',fair:1-M.P,ask:da,size:book.ybs,bid:book.nb,bsz:book.nbs};
+    for(const k of ['up','down']){const x=q[k];x.edge=x.ask!=null?x.fair-x.ask-fee(x.ask,C.size)-C.slip/100:null;
+      rows.push(`<tr><td>${k==='up'?'UP':'DOWN'}</td><td>${c(x.fair)}</td><td>${x.ask!=null?c(x.ask):'—'}</td><td>${x.ask!=null?Math.floor(x.size):'—'}</td><td class="${x.edge>0?'buy':'sell'}">${x.edge!=null?(x.edge>=0?'+':'')+(x.edge*100).toFixed(1)+'¢':'—'}</td></tr>`)}
+    snap.push({t:now,bp:M.bp,ua:q.up.ask,da:q.down.ask});while(snap.length>90)snap.shift()}
+  $('mT').innerHTML=rows.join('')||'<tr><td colspan="5" class="mute">Waiting for Kalshi quotes</td></tr>';
+  $('mQ').textContent=fresh?`Kalshi book ${kal.ticker} · ${Math.round((now-book.t)/1000)}s old · edge after ${C.slip}¢ slippage and taker fee`:'';
+  // gating
+  if(!KS.K)return no('No strike yet.');
+  if(KS.src==='estimate')return no('Strike is only an estimate. Alerts need the real Kalshi strike (load from Kalshi or type it in).');
+  if(!M)return no(vol()?'Waiting for index price.':'Learning volatility: needs 10 minutes of prices.');
+  if(!KS.bp||!['cb','krk','bst'].some(id=>{const e=EX.find(x=>x.id===id);return e.lt&&now-e.lt<10000}))return no('Index price is stale: no fresh Coinbase, Kraken or Bitstamp trade.');
+  if(kalErr&&!fresh)return no('Kalshi quotes are blocked in this browser, so there is no executable price to compare. Try another network or device.');
+  if(!fresh)return no('Kalshi quote is stale or missing.');
+  if(KS.left<3)return no('Window closing.');
+  // held position exits
+  if(pos.win===KS.qs&&pos.side&&pos.qty>0){const x=q[pos.side];if(x.bid!=null){const proceeds=x.bid-fee(x.bid,pos.qty)-C.slip/100,hold=x.fair,ex=proceeds-hold;
+      const key='SELL'+pos.side+KS.qs;
+      if(ex>C.exit/100&&x.bsz>=pos.qty){if(!active[key]||ex-active[key]>=0.05){active[key]=ex;fire(mk('SELL',x,M,proceeds,ex,pos.qty,`Bid ${c(x.bid)} pays more than the ${(hold*100).toFixed(1)}% chance of collecting $1`,`Exit edge gone if the bid drops below ${c(hold+C.exit/100+fee(x.bid,pos.qty)+C.slip/100)}`))}}
+      else if(active[key]&&ex<C.exit/200)delete active[key]}}
+  let best=null;
+  for(const k of ['up','down']){const x=q[k],key='BUY'+k+KS.qs;
+    const ok=x.ask!=null&&x.ask*100<=C.max&&x.ask>=0.02&&x.edge>=C.min/100&&x.size>=C.size;
+    if(ok){if(!best||x.edge>best.edge)best=x;
+      if(!active[key]||x.edge-active[key]>=0.05){active[key]=x.edge;
+        const need=x.ask+fee(x.ask,C.size)+C.slip/100+C.min/100,zN=PhiInv(Math.min(0.999,need)),lvl=k==='up'?M.K+zN*M.sd-(M.mean-M.bp):M.K-zN*M.sd-(M.mean-M.bp);
+        fire(mk('BUY',x,M,x.ask,x.edge,C.size,trigger(M,x),`Edge gone if BTC ${k==='up'?'falls below':'rises above'} ${pxFmt(lvl)} or the ${k==='up'?'Up':'Down'} ask rises above ${c(x.fair-fee(x.ask,C.size)-C.slip/100-C.min/100)}`))}}
+    else if(active[key]&&(x.edge==null||x.edge<C.min/200))delete active[key]}
+  if(best){act.textContent='BUY '+(best.side==='up'?'ABOVE':'BELOW');act.className=best.side==='up'?'buy':'sell';card.className='card '+(best.side==='up'?'b':'s');
+    why.textContent=`Fair ${c(best.fair)} vs ask ${c(best.ask)}: ${(best.edge*100).toFixed(1)}¢ net edge per contract.`}
+  else{const e=Math.max(q.up.edge??-1,q.down.edge??-1);no(`No side clears your ${C.min}¢ minimum edge (best ${(e*100).toFixed(1)}¢).`+(q.up.size<C.size&&q.down.size<C.size?' Book is also thin for your size.':''))}
+}
+function mk(action,x,M,px,edge,size,trig,inval){const l=Math.max(0,Math.round(KS.left)),a=absCalc(300,impact()||{k:0,typ:1})||{};
+  return{action,side:x.side,K:M.K,idx:M.bp,dist:M.bp-M.K,z:M.z,px,size,p:x.fair,edge,trigger:trig,inval,t:Date.now(),left:`${Math.floor(l/60)}m ${String(l%60).padStart(2,'0')}s left`,ticker:kal.ticker,close:KS.close,
+    vol:M.V.s1m,regime:M.V.regime,flow:{sig:sig.side,kind:sig.kind,spot5:(o=>o.sb-o.ss)(sum(nowS()-299)),abs:a.abs??null}}}
+// ---------- log ----------
+let LOG=[];try{LOG=JSON.parse(localStorage.getItem('edgeLog')||'[]')}catch(_){LOG=[]}
+const saveLog=()=>{try{localStorage.setItem('edgeLog',JSON.stringify(LOG.slice(-2000)))}catch(_){}};
+function addLog(a){LOG.push({...a,result:null});saveLog();renderLog()}
+function logFlow(side,kind){const M=model();if(!kal.ticker||kal.win!==KS.qs)return;const ua=book.nb!=null?1-book.nb:null,da=book.yb!=null?1-book.yb:null;
+  LOG.push({type:'flow',action:'FLOW',side:side>0?'up':'down',kind,t:Date.now(),ticker:kal.ticker,close:KS.close,K:KS.K,idx:KS.bp,p:M?(side>0?M.P:1-M.P):null,px:side>0?ua:da,edge:null,result:null});saveLog();renderLog()}
+async function settle(){const now=Date.now(),todo=[...new Set(LOG.filter(x=>!x.result&&x.ticker&&now>x.close+20000&&now-x.close<86400000*3).map(x=>x.ticker))].slice(0,5);
+  for(const tk of todo){try{const r=await fetch(`${API}/markets/${encodeURIComponent(tk)}`,{cache:'no-store'});if(!r.ok)continue;const m=(await r.json()).market||{};const res=String(m.result||'').toLowerCase();
+      if(res==='yes'||res==='no'){for(const x of LOG)if(x.ticker===tk&&!x.result){x.result=res;const won=(x.side==='up')===(res==='yes');
+        if(x.px!=null){const f=fee(x.px,x.size||1);x.pnl=x.action==='SELL'?(x.px-f)-(won?1:0):(won?1:0)-x.px-f}}}}catch(_){}}
+  saveLog();renderLog()}
+setInterval(settle,30000);settle();
+function renderLog(){$('logN').textContent=LOG.length;const tb=$('logT').tBodies[0];
+  tb.innerHTML=LOG.slice(-25).reverse().map(x=>{const r=x.result?((x.side==='up')===(x.result==='yes')?'<span class="buy">WIN</span>':'<span class="sell">LOSS</span>'):'<span class="mute">pending</span>';
+    return `<tr><td>${new Date(x.t).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}</td><td>${x.type==='edge'?x.action:'Flow '+(x.kind==='absorb'?'absorb':x.kind||'')}</td><td>${x.side==='up'?'UP':'DOWN'}</td><td>${x.px!=null?c(x.px):'—'}</td><td>${x.p!=null?(x.p*100).toFixed(0)+'%':'—'}</td><td>${x.edge!=null?(x.edge*100).toFixed(1)+'¢':'—'}</td><td>${r}</td><td class="${cls(x.pnl||0)}">${x.pnl!=null?(x.pnl>=0?'+':'−')+(Math.abs(x.pnl)*100).toFixed(1)+'¢':'—'}</td></tr>`}).join('')||'<tr><td colspan="8" class="mute">No alerts logged yet</td></tr>';
+  const sum2=(t)=>{const d=LOG.filter(x=>x.type===t&&x.result&&x.px!=null);if(!d.length)return null;const w=d.filter(x=>(x.side==='up')===(x.result==='yes')).length;
+    const pn=d.reduce((a,x)=>a+(x.pnl||0),0)/d.length,pe=d.filter(x=>x.p!=null);const avgP=pe.length?pe.reduce((a,x)=>a+x.p,0)/pe.length:null;
+    return `${d.length} settled · won ${(w/d.length*100).toFixed(0)}%${avgP!=null?` (model expected ${(avgP*100).toFixed(0)}%)`:''} · avg P&L ${(pn*100).toFixed(1)}¢/contract`};
+  const e=sum2('edge'),f=sum2('flow');$('logSum').innerHTML='';
+  [['Edge alerts: ',e],['Order-flow signals (logged only): ',f]].forEach(([l,v])=>{const d=document.createElement('div');d.textContent=l+(v||'none settled yet');$('logSum').appendChild(d)});
+  if(LOG.filter(x=>x.result).length<100){const d=document.createElement('div');d.className='mute';d.style.fontSize='12px';d.textContent='Treat results as noise until at least 100 settled alerts.';$('logSum').appendChild(d)}}
+renderLog();
+$('logCopy').addEventListener('click',async()=>{const cols=['t','type','action','side','ticker','K','idx','dist','z','px','size','p','edge','vol','regime','trigger','inval','result','pnl'];
+  const esc=v=>{v=v==null?'':typeof v==='object'?JSON.stringify(v):String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+  const csv=[cols.join(',')].concat(LOG.map(x=>cols.map(k=>esc(k==='t'?new Date(x.t).toISOString():x[k])).join(','))).join('\n');
+  try{await navigator.clipboard.writeText(csv);$('logMsg').textContent='Copied '+LOG.length+' rows'}catch(_){$('logMsg').textContent='Copy blocked by this browser'}});
+let clr=0;$('logClr').addEventListener('click',()=>{if(Date.now()-clr<4000){LOG=[];saveLog();renderLog();$('logMsg').textContent='Log cleared'}else{clr=Date.now();$('logMsg').textContent='Tap again to clear the whole log'}});
+setInterval(edgeTick,1000);
 }
 </script>
 </body>
