@@ -76,6 +76,11 @@ details{margin-top:12px}summary{cursor:pointer;color:var(--mute);font-size:14px;
 .cfg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:8px}.cfg label{font-size:12px;color:var(--mute);display:grid;gap:4px}
 #logT td{font-size:12.5px}
 @media(max-width:900px){.eg{grid-template-columns:minmax(0,1fr)}}
+#auCard .aug{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px;align-items:start}
+#auNow td,#auFeed td,#auHist td{font-size:13px;white-space:normal;text-align:left;vertical-align:top}#auHist td:nth-child(2){text-align:right}
+#auNow td:first-child,#auFeed td:first-child{white-space:nowrap}
+.pill{display:inline-block;font-size:11px;padding:1px 7px;border-radius:99px;border:1px solid var(--line);color:var(--mute);margin-left:4px}
+@media(max-width:900px){#auCard .aug{grid-template-columns:minmax(0,1fr)}}
 #sigCard{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px 22px;align-items:center;margin-bottom:14px;border-width:2px}
 #sigWord{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:clamp(44px,8vw,68px);line-height:1;padding:10px 22px;border-radius:12px;background:#1d2530;color:var(--mute);text-align:center;min-width:180px}
 #sigCard.b{border-color:var(--buy)}#sigCard.b #sigWord{background:var(--buy);color:#04130c}
@@ -151,6 +156,19 @@ details{margin-top:12px}summary{cursor:pointer;color:var(--mute);font-size:14px;
     <div class="scroll"><table id="logT"><thead><tr><th>Time</th><th>Type</th><th>Side</th><th>Price</th><th>P est.</th><th>Edge</th><th>Result</th><th>P&amp;L/ct</th></tr></thead><tbody></tbody></table></div>
     <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button type="button" class="btn" id="logCopy">Copy log as CSV</button><button type="button" class="tag" id="logClr" style="background:none;color:var(--mute);cursor:pointer;min-height:40px">Clear log</button><span id="logMsg" class="mute" style="font-size:13px;align-self:center"></span></div>
     <div class="note">Every edge alert and every order-flow signal is logged with its inputs, the executable quote and the settled result from Kalshi. Order-flow signals stay "logged only" and do not change the probability until this log shows they help on later data. The log lives in this browser only.</div>
+  </details>
+</section>
+
+<section class="card" id="auCard" style="margin-bottom:14px">
+  <div class="head"><h2>Structure &amp; audit signals · BTC/USDT · watch mode</h2><span id="auSrc" class="mute" style="font-size:12px">Loading candles…</span></div>
+  <div class="div" style="margin:0 0 12px"><b id="auDec">WAIT</b> <span id="auDecWhy" class="mute">Actionable BUY/SELL alerts are off until each signal passes walk-forward validation on a full year of data. Everything below is watch mode.</span></div>
+  <div class="aug">
+    <div><div class="mute" style="font-size:12px;margin-bottom:4px">Active now</div><table><tbody id="auNow"><tr><td class="mute">Waiting for data</td></tr></tbody></table></div>
+    <div><div class="mute" style="font-size:12px;margin-bottom:4px">Event feed (state changes, newest first)</div><div class="scroll" style="max-height:330px;overflow-y:auto"><table><tbody id="auFeed"><tr><td class="mute">No events yet</td></tr></tbody></table></div></div>
+  </div>
+  <details><summary>History check: loaded candles vs the audit</summary>
+    <div class="scroll"><table id="auHist"><thead><tr><th>Signal (1h unless noted)</th><th>Events</th><th>Result on loaded data</th><th>Audit</th></tr></thead><tbody></tbody></table></div>
+    <div class="note" id="auHistNote"></div>
   </details>
 </section>
 
@@ -826,6 +844,132 @@ $('logCopy').addEventListener('click',async()=>{const cols=['t','type','action',
   try{await navigator.clipboard.writeText(csv);$('logMsg').textContent='Copied '+LOG.length+' rows'}catch(_){$('logMsg').textContent='Copy blocked by this browser'}});
 let clr=0;$('logClr').addEventListener('click',()=>{if(Date.now()-clr<4000){LOG=[];saveLog();renderLog();$('logMsg').textContent='Log cleared'}else{clr=Date.now();$('logMsg').textContent='Tap again to clear the whole log'}});
 setInterval(edgeTick,1000);
+// ---------- Audit structure & signals (watch mode) ----------
+const HR=3600e3,DAY=864e5;
+const AU={s1:null,sSrc:'',d1:null,dSrc:'',pf:null,pfSrc:'',oi:null,oiSrc:'',fund:null,fSrc:'',t:0,first:true};
+async function gj(u){const r=await fetch(u,{cache:'no-store'});if(!r.ok)throw new Error(String(r.status));return r.json()}
+async function pick(list){for(const [n,f] of list){try{const v=await f();if(v&&v.length)return[v,n]}catch(_){}}return[null,'']}
+const binK=(base,path,iv,lim)=>async()=>(await gj(`${base}${path}?symbol=BTCUSDT&interval=${iv}&limit=${lim}`)).map(k=>({t:+k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4],v:+k[5],n:+k[8],tb:+k[9]}));
+const cbK=g=>async()=>(await gj(`https://api.exchange.coinbase.com/products/BTC-USD/candles?granularity=${g}`)).map(k=>({t:k[0]*1000,l:+k[1],h:+k[2],o:+k[3],c:+k[4],v:+k[5]})).sort((a,b)=>a.t-b.t);
+const okx=path=>async()=>(await gj('https://www.okx.com'+path)).data;
+async function auLoad(){
+  const now=Date.now(),done=(x,ms)=>x.filter(b=>b.t+ms<=now);
+  let [s1,sn]=await pick([['Binance spot',binK('https://data-api.binance.vision','/api/v3/klines','1h',1000)],['Binance spot',binK('https://api.binance.com','/api/v3/klines','1h',1000)],['Coinbase BTC-USD',cbK(3600)]]);
+  let [d1,dn]=await pick([['Binance spot',binK('https://data-api.binance.vision','/api/v3/klines','1d',500)],['Binance spot',binK('https://api.binance.com','/api/v3/klines','1d',500)],['Coinbase BTC-USD',cbK(86400)]]);
+  let [pf,pn]=await pick([['Binance perp',async()=>(await binK('https://fapi.binance.com','/fapi/v1/klines','1h',1000)()).map(k=>({t:k.t,buy:k.tb,tot:k.v}))],
+    ['OKX perp',async()=>(await okx('/api/v5/rubik/stat/taker-volume?ccy=BTC&instType=CONTRACTS&period=1H')()).map(r=>({t:+r[0],buy:+r[2],tot:+r[1]+ +r[2]})).sort((a,b)=>a.t-b.t)]]);
+  let [oi,on]=await pick([['Binance perp',async()=>(await gj('https://fapi.binance.com/futures/data/openInterestHist?symbol=BTCUSDT&period=1h&limit=500')).map(r=>({t:+r.timestamp,oi:+r.sumOpenInterestValue}))],
+    ['OKX',async()=>(await okx('/api/v5/rubik/stat/contracts/open-interest-volume?ccy=BTC&period=1H')()).map(r=>({t:+r[0],oi:+r[1]})).sort((a,b)=>a.t-b.t)]]);
+  let [fd,fn]=await pick([['Binance',async()=>[+(await gj('https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT')).lastFundingRate]],['OKX',async()=>[+(await okx('/api/v5/public/funding-rate?instId=BTC-USDT-SWAP')())[0].fundingRate]]]);
+  if(s1){AU.s1=done(s1,HR);AU.sSrc=sn}if(d1){AU.d1=done(d1,DAY);AU.dSrc=dn}if(pf){AU.pf=done(pf,HR);AU.pfSrc=pn}if(oi){AU.oi=oi;AU.oiSrc=on}if(fd){AU.fund=fd[0];AU.fSrc=fn}
+  AU.t=Date.now();auRun()}
+function agg4(b){const g=new Map();for(const x of b){const k=Math.floor(x.t/(4*HR))*4*HR;const a=g.get(k);if(!a)g.set(k,{t:k,o:x.o,h:x.h,l:x.l,c:x.c,v:x.v,k:1});else{a.h=Math.max(a.h,x.h);a.l=Math.min(a.l,x.l);a.c=x.c;a.v+=x.v;a.k++}}
+  return[...g.values()].filter(a=>a.k===4&&a.t+4*HR<=Date.now())}
+function pivots(b,low){const P=[];for(let i=2;i<b.length-2;i++){const v=low?b[i].l:b[i].h,f=low?(x=>x.l):(x=>x.h);
+  const L=[f(b[i-1]),f(b[i-2])],R=[f(b[i+1]),f(b[i+2])];if(low?(L.every(x=>v<=x)&&R.every(x=>v<x)):(L.every(x=>v>=x)&&R.every(x=>v>x)))P.push(i)}return P}
+function structs(b,th,tfH,bull){const P=pivots(b,bull),out=[],ms=tfH*HR,d=bull?1:-1,close=i=>b[i]?b[i].t+ms:null;
+  for(let k=1;k<P.length;k++){const i1=P[k-1],i2=P[k];if(i2-i1<2||i2-i1>24)continue;
+    let lv=bull?-Infinity:Infinity;for(let i=i1+1;i<i2;i++)lv=bull?Math.max(lv,b[i].h):Math.min(lv,b[i].l);
+    const p1=bull?b[i1].l:b[i1].h,p2=bull?b[i2].l:b[i2].h;
+    if(!(bull?(lv>=p1*(1+th)&&lv>=p2*(1+th)):(lv<=p1*(1-th)&&lv<=p2*(1-th))))continue;
+    const r=(p2-p1)/p1,lab=Math.abs(r)<=th*0.1?'equal':(r>0?'higher':'lower');
+    const e={tf:tfH,bull,lv,p1,p2,lab,known:close(i2+2),exp:close(i2+12),brk:null};
+    for(let j=i2+1;j<=Math.min(i2+12,b.length-1);j++){if(bull?b[j].l<p2:b[j].h>p2){e.voided=close(j);break}if((b[j].c-lv)*d>0){e.brk=j;break}}
+    if(e.brk!=null){const j=e.brk;e.brkKnown=Math.max(close(j),e.known||0);e.brkPx=b[j].c;
+      for(let m=j+1;m<b.length&&m<=j+48;m++){if(e.fl==null&&(b[m].c-lv)*d<0)e.fl=m;if(e.ret==null&&e.fl==null&&(bull?b[m].l<=lv:b[m].h>=lv)&&(b[m].c-lv)*d>0)e.ret=m;if(e.fl!=null)break}
+      const n6=Math.ceil(6/tfH),n12=Math.ceil(12/tfH),n24=Math.ceil(24/tfH);
+      e.held6=b[j+n6]?b.slice(j+1,j+1+n6).every(x=>(x.c-lv)*d>0):null;
+      e.f12=b[j+n12]?(b[j+n12].c-b[j].c)*d>0:null;e.f24=b[j+n24]?(b[j+n24].c-b[j].c)*d>0:null;
+      e.back12=b[j+n12]?b.slice(j+1,j+1+n12).some(x=>(x.c-lv)*d<0):null;
+      e.r612=(tfH===1&&e.ret!=null&&e.ret-j<=6&&b[j+12])?(b[j+12].c-b[j+6].c)*d>0:null}
+    out.push(e)}return out}
+const med=a=>{if(!a.length)return null;const x=[...a].sort((p,q)=>p-q),m=x.length>>1;return x.length%2?x[m]:(x[m-1]+x[m])/2};
+const pct=(a)=>a.length?Math.round(a.filter(Boolean).length/a.length*1000)/10:null;
+let auSeen=0;try{auSeen=+localStorage.getItem('auSeen')||0}catch(_){}
+let auLog=[];try{auLog=JSON.parse(localStorage.getItem('auLog')||'[]')}catch(_){}
+function auRun(){
+  const s=AU.s1;if(!s||s.length<60){$('auSrc').textContent='Could not load hourly candles from Binance or Coinbase in this browser.';return}
+  const now=Date.now(),ev=[],TH={1:0.0035,4:0.007,24:0.015},b4=agg4(s),dd=AU.d1||[];
+  const sets=[[1,s],[4,b4],[24,dd]],ST={};
+  for(const [tf,b] of sets){ST[tf]=[];if(b.length<10)continue;for(const bull of [true,false])ST[tf].push(...structs(b,TH[tf],tf,bull))}
+  const tfn=tf=>tf===24?'1D':tf+'h',dir=e=>e.bull?'bullish (two lows)':'bearish (two highs)';
+  for(const tf of [1,4,24])for(const e of ST[tf]){const b=tf===1?s:tf===4?b4:dd,ms=tf*HR;
+    if(e.known)ev.push({t:e.known,tf,type:'SETUP WATCH',side:e.bull?1:-1,txt:`${dir(e)}, ${tf===24?'':''}second ${e.bull?'low':'high'} ${e.lab} · level ${pxFmt(e.lv)}`+(tf===1&&e.bull?` · audit confirm rate ${e.lab==='higher'?'45.8%':e.lab==='lower'?'31.7%':'n/a'}`:'')});
+    if(e.brk!=null)ev.push({t:e.brkKnown,tf,type:'LEVEL CLEARED',side:e.bull?1:-1,txt:`close ${e.bull?'above':'below'} ${pxFmt(e.lv)}`+(tf===1?(e.bull?' · audit: higher at +12h 44.7%, back below within 12h 68.0%':' · audit: lower at +12h 48.9%'):tf===4&&e.bull?' · audit 4h: higher at +24h 52.1% vs 49.7% baseline':' · daily sample was only 24'),px:e.brkPx});
+    if(e.ret!=null)ev.push({t:b[e.ret].t+ms,tf,type:'RETEST HELD',side:e.bull?1:-1,txt:`touched ${pxFmt(e.lv)} and closed ${e.bull?'above':'below'}`+(tf===1&&e.bull?' · audit: held retests rose +6h→+12h 49.3%':'')});
+    if(e.fl!=null)ev.push({t:b[e.fl].t+ms,tf,type:'LEVEL FAILED',side:e.bull?-1:1,txt:`closed back ${e.bull?'below':'above'} ${pxFmt(e.lv)}`});}
+  // hourly audit signals
+  const pm=new Map((AU.pf||[]).map(x=>[x.t,x.tot?x.buy/x.tot:null])),om=new Map((AU.oi||[]).map(x=>[x.t,x.oi]));
+  const day=t=>Math.floor(t/DAY),dH=new Map(),dL=new Map();for(const x of s){const k=day(x.t);dH.set(k,Math.max(dH.get(k)??-Infinity,x.h));dL.set(k,Math.min(dL.get(k)??Infinity,x.l))}
+  const H={flow:[],flowWd:[],flowWe:[],sell:[],spot:[],clim:[],climMv:[],brk:[],swp:[],rng:[],rngC:[],rngAll:[],cmp:[]},fired=new Set();
+  const fwd=(i,n)=>s[i+n]?(s[i+n].c-s[i].c)/s[i].c:null,rng6=i=>{if(!s[i+6])return null;let h=-Infinity,l=Infinity;for(let k=i+1;k<=i+6;k++){h=Math.max(h,s[k].h);l=Math.min(l,s[k].l)}return(h-l)/s[i].c};
+  for(let i=24;i<s.length;i++){const x=s[i],T=x.t+HR,f6=fwd(i,6),r6=rng6(i),we=[0,6].includes(new Date(x.t).getUTCDay());if(r6!=null)H.rngAll.push(r6);
+    const sh=pm.get(x.t);
+    if(sh!=null&&sh>=0.6){ev.push({t:T,tf:1,type:'BUY FLOW',side:1,txt:`perp taker buys ${(sh*100).toFixed(0)}% of the hour${we?' (weekend)':''} · audit: higher at +6h 57.9%, median +0.073% before costs`});if(f6!=null){H.flow.push(f6>0);(we?H.flowWe:H.flowWd).push(f6>0)}}
+    if(sh!=null&&sh<=0.4){ev.push({t:T,tf:1,type:'PERP SELL FLOW',side:-1,txt:`perp taker sells ${((1-sh)*100).toFixed(0)}% · separate evidence, not in audit summary`});if(f6!=null)H.sell.push(f6<0)}
+    if(x.tb&&x.v&&x.tb/x.v>=0.6){ev.push({t:T,tf:1,type:'SPOT BUY FLOW',side:1,txt:`spot taker buys ${(x.tb/x.v*100).toFixed(0)}% · separate evidence, not in audit summary`});if(f6!=null)H.spot.push(f6>0)}
+    const mv=med(s.slice(i-24,i).map(y=>y.v));
+    if(x.c<x.o&&mv&&x.v>=2*mv){ev.push({t:T,tf:1,type:'SELLING CLIMAX WATCH',side:1,txt:`down hour on ${(x.v/mv).toFixed(1)}× median volume · pullback path near ${pxFmt(x.l)}, reclaim path above ${pxFmt(x.o)} · audit: higher at +6h 55.5%, median +0.16%`});if(f6!=null){H.clim.push(f6>0);H.climMv.push(f6)}}
+    const k=day(x.t),ph=dH.get(k-1),pl=dL.get(k-1);
+    if(ph!=null&&k<day(now)+1){for(const [lvl,up] of [[ph,1],[pl,-1]]){const key=k+'|'+up;
+      if(!fired.has('b'+key)&&(x.c-lvl)*up>0){fired.add('b'+key);ev.push({t:T,tf:1,type:'PRIOR-DAY LEVEL TEST',side:up,txt:`first close ${up>0?'above prior UTC-day high':'below prior UTC-day low'} ${pxFmt(lvl)} · audit: continuation below 44%`});if(f6!=null)H.brk.push(f6*up>0)}
+      else if(!fired.has('s'+key)&&!fired.has('b'+key)&&(up>0?x.h>lvl&&x.c<=lvl:x.l<lvl&&x.c>=lvl)){fired.add('s'+key);ev.push({t:T,tf:1,type:'PRIOR-DAY LEVEL TEST',side:-up,txt:`wick through ${up>0?'prior-day high':'prior-day low'} ${pxFmt(lvl)}, closed back inside (sweep)`});if(f6!=null)H.swp.push(f6*-up>0)}}}
+    const o0=om.get(x.t),o1=om.get(x.t+HR),doi=o0&&o1?o1/o0-1:null,v2=mv&&x.v>=2*mv,n2=x.n&&med(s.slice(i-24,i).map(y=>y.n||0))*2<=x.n;
+    if((doi!=null&&Math.abs(doi)>=0.01)||v2||n2){const combo=v2&&doi!=null&&doi>=0.01;ev.push({t:T,tf:1,type:'RANGE EXPANSION',side:0,txt:[doi!=null&&Math.abs(doi)>=0.01?`OI ${doi>0?'+':''}${(doi*100).toFixed(1)}%`:'',v2?'volume 2×':'',n2?'trades 2×':''].filter(Boolean).join(' · ')+(combo?' · volume 2× with OI up: audit median 6h range 1.88% vs 1.32%':'')});if(r6!=null){H.rng.push(r6);if(combo)H.rngC.push(r6)}}
+    if(i>=54){const ar=a=>a.reduce((p,y)=>p+(y.h-y.l)/y.c,0)/a.length,r6a=ar(s.slice(i-5,i+1)),r48=ar(s.slice(i-53,i-5));
+      if(r6a<=0.5*r48){ev.push({t:T,tf:1,type:'COMPRESSION',side:0,txt:`last 6h avg range ${(r6a*100).toFixed(2)}% vs ${(r48*100).toFixed(2)}% · audit: next 6h median range 0.56%, small-range entries suppressed`});if(r6!=null)H.cmp.push(r6)}}}
+  ev.sort((a,b)=>b.t-a.t);
+  // notifications for new state changes (one per event)
+  const fresh=ev.filter(e=>e.t>auSeen&&e.t<=now&&now-e.t<3*HR);
+  if(!AU.first||auSeen)for(const e of fresh.slice(0,5)){beep(e.side||1);if(ntf)try{new Notification(`${e.type} · ${e.tf===24?'1D':e.tf+'h'}`,{body:e.txt})}catch(_){}}
+  for(const e of fresh){auLog.push({t:e.t,tf:e.tf,type:e.type,side:e.side,px:e.px||null})}
+  if(ev.length){auSeen=Math.max(auSeen,ev[0].t);try{localStorage.setItem('auSeen',auSeen);localStorage.setItem('auLog',JSON.stringify(auLog.slice(-1500)))}catch(_){}}
+  AU.first=false;
+  // feed
+  const ago=t=>{const m=Math.round((now-t)/60000);return m<60?m+'m ago':m<1440?Math.round(m/60)+'h ago':Math.round(m/1440)+'d ago'};
+  $('auFeed').innerHTML=ev.filter(e=>now-e.t<72*HR).slice(0,30).map(e=>{const f=s.findIndex(x=>x.t+HR===e.t),o=f>=0&&s[f+6]?(s[f+6].c-s[f].c)/s[f].c:null;
+    return `<tr><td>${new Date(e.t).toLocaleString('en-US',{weekday:'short',hour:'numeric',minute:'2-digit'})}<div class="mute" style="font-size:11px">${ago(e.t)}</div></td><td><b class="${e.side>0?'buy':e.side<0?'sell':''}">${e.type}</b><span class="pill">${e.tf===24?'1D':e.tf+'h'}</span><div class="mute">${e.txt}${o!=null?` · <b class="${cls(o)}">+6h ${o>=0?'+':''}${(o*100).toFixed(2)}%</b>`:''}</div></td></tr>`}).join('')||'<tr><td class="mute">No events in the last 72 hours</td></tr>';
+  // active now
+  const rows=[],last=s[s.length-1],lt=last.t;
+  for(const tf of [1,4,24])for(const e of ST[tf]){const live=e.known&&e.known<=now&&e.brk==null&&!e.voided&&e.exp&&e.exp>now;const post=e.brk!=null&&e.fl==null&&now-e.brkKnown<12*HR;
+    if(live)rows.push([e.known,`<b class="${e.bull?'buy':'sell'}">SETUP WATCH</b><span class="pill">${tfn(tf)}</span>`,`${dir(e)}, second ${e.bull?'low':'high'} ${e.lab}. Needs a close ${e.bull?'above':'below'} <b>${pxFmt(e.lv)}</b> by ${new Date(e.exp).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}; void if ${e.bull?'below':'above'} ${pxFmt(e.p2)}.`]);
+    if(post)rows.push([e.brkKnown,`<b class="${e.bull?'buy':'sell'}">LEVEL CLEARED</b><span class="pill">${tfn(tf)}</span>`,`Holding ${e.bull?'above':'below'} ${pxFmt(e.lv)}${e.ret!=null?' · retest held':''}. Research levels: retest zone ${pxFmt(e.lv)}, invalidation close back ${e.bull?'below':'above'} it, structure ${e.bull?'low':'high'} ${pxFmt(e.p2)}.`])}
+  rows.sort((a,b)=>b[0]-a[0]);
+  const sh=pm.get(lt),mv=med(s.slice(-25,-1).map(y=>y.v));
+  rows.push([0,'<b>Last hour</b>',[sh!=null?`perp taker buy ${(sh*100).toFixed(0)}%`:'perp flow unavailable',last.tb?`spot taker buy ${(last.tb/last.v*100).toFixed(0)}%`:'spot taker split unavailable',mv?`volume ${(last.v/mv).toFixed(1)}× median`:''].filter(Boolean).join(' · ')]);
+  const k=day(now),ph=dH.get(k-1),pl=dL.get(k-1);if(ph)rows.push([0,'<b>Prior UTC day</b>',`high ${pxFmt(ph)} · low ${pxFmt(pl)}`]);
+  const perp=['binf','byb','okx'].map(id=>EX.find(e=>e.id===id)).find(e=>e.status==='live'&&e.px),cb=EX.find(e=>e.id==='cb');
+  rows.push([0,'<b>Context</b> <span class="pill">research</span>',[AU.fund!=null?`funding ${(AU.fund*100).toFixed(4)}% (${AU.fSrc})`:'funding unavailable',perp&&cb.px?`perp ${perp.px-cb.px>=0?'premium':'discount'} $${Math.abs(perp.px-cb.px).toFixed(0)} vs Coinbase`:'',KS&&KS.K&&KS.bp?`Kalshi strike distance ${KS.bp-KS.K>=0?'+':'−'}$${Math.abs(KS.bp-KS.K).toFixed(0)}`:''].filter(Boolean).join(' · ')]);
+  $('auNow').innerHTML=rows.map(r=>`<tr><td>${r[1]}</td><td class="mute">${r[2]}</td></tr>`).join('');
+  // decision line
+  const act=rows.filter(r=>r[0]&&/LEVEL CLEARED|SETUP WATCH/.test(r[1])).length;
+  $('auDec').textContent='WAIT';$('auDecWhy').textContent=`${act} live structure ${act===1?'setup':'setups'}. Actionable BUY/SELL alerts are off until each signal passes walk-forward validation on a full year of data. Everything here is watch mode.`;
+  // history check
+  const all1=ST[1],bu=all1.filter(e=>e.bull),be=all1.filter(e=>!e.bull),b4u=ST[4].filter(e=>e.bull);
+  const conf=l=>{const a=bu.filter(e=>e.lab===l&&(e.brk!=null||e.voided||!(e.exp>now)));return[a.length,pct(a.map(e=>e.brk!=null))]};
+  const [nh,ph2]=conf('higher'),[nl,pl2]=conf('lower');const f=v=>v==null?'—':v+'%';const nz=a=>a.filter(v=>v!=null);
+  const base4=(()=>{const a=[];for(let i=0;i+6<b4.length;i++)a.push(b4[i+6].c>b4[i].c);return pct(a)})();
+  const R=[
+    ['Two lows → breakout confirmed, higher L2',nh,f(ph2),'45.8%'],['Two lows → breakout confirmed, lower L2',nl,f(pl2),'31.7%'],
+    ['Bullish break: higher at +12h',nz(bu.map(e=>e.f12)).length,f(pct(nz(bu.map(e=>e.f12)))),'44.7%'],
+    ['Bullish break: closed back below within 12h',nz(bu.map(e=>e.back12)).length,f(pct(nz(bu.map(e=>e.back12)))),'68.0%'],
+    ['Bullish break: every close held first 6h',nz(bu.map(e=>e.held6)).length,f(pct(nz(bu.map(e=>e.held6)))),'tracked'],
+    ['Held retest: rose +6h → +12h',nz(bu.map(e=>e.r612)).length,f(pct(nz(bu.map(e=>e.r612)))),'49.3%'],
+    ['Bearish break: lower at +12h',nz(be.map(e=>e.f12)).length,f(pct(nz(be.map(e=>e.f12)))),'48.9%'],
+    ['4h bullish break: higher at +24h',nz(b4u.map(e=>e.f24)).length,f(pct(nz(b4u.map(e=>e.f24))))+(base4!=null?` (base ${base4}%)`:''),'52.1% (base 49.7%)'],
+    ['BUY FLOW ≥60% perp: higher at +6h',H.flow.length,f(pct(H.flow))+` · wkday ${f(pct(H.flowWd))} / wkend ${f(pct(H.flowWe))}`,'57.9%'],
+    ['Perp seller ≥60%: lower at +6h',H.sell.length,f(pct(H.sell)),'separate'],['Spot buyer ≥60%: higher at +6h',H.spot.length,f(pct(H.spot)),'separate'],
+    ['Selling climax: higher at +6h',H.clim.length,f(pct(H.clim))+(H.climMv.length?` · median ${(med(H.climMv)*100).toFixed(2)}%`:''),'55.5% · +0.16%'],
+    ['Prior-day closing break: continued at +6h',H.brk.length,f(pct(H.brk)),'below 44%'],['Prior-day sweep: reversed at +6h',H.swp.length,f(pct(H.swp)),'varied'],
+    ['Volume 2× + OI up 1%: median 6h range',H.rngC.length,H.rngC.length?(med(H.rngC)*100).toFixed(2)+'% vs '+(med(H.rngAll)*100).toFixed(2)+'% all':'—','1.88% vs 1.32%'],
+    ['Compression: median next-6h range',H.cmp.length,H.cmp.length?(med(H.cmp)*100).toFixed(2)+'%':'—','0.56%']];
+  $('auHist').tBodies[0].innerHTML=R.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('');
+  const days=Math.round((s[s.length-1].t-s[0].t)/DAY);
+  $('auHistNote').textContent=`Loaded ${s.length} hourly candles (~${days} days) from ${AU.sSrc}. This is an in-sample sanity check on a short window, not validation. Small counts are noise. Equal lows/highs use a tolerance of 10% of the timeframe threshold. "Continuation" for prior-day breaks is measured as the +6h close beyond the break close.`;
+  $('auSrc').textContent=`Candles: ${AU.sSrc}${AU.dSrc?' · daily '+AU.dSrc:''} · perp flow: ${AU.pfSrc||'unavailable'} · OI: ${AU.oiSrc||'unavailable'} · updated ${new Date(AU.t).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}`;
+}
+auLoad();let auHr=Math.floor(Date.now()/HR);
+setInterval(()=>{const h=Math.floor((Date.now()-20000)/HR);if(h!==auHr||Date.now()-AU.t>600000){auHr=h;auLoad()}},15000);
 }
 </script>
 </body>
