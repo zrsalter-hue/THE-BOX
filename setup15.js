@@ -46,9 +46,9 @@ const sgn=v=>v>0?1:v<0?-1:0;
 function pxAt(S,t){ // last price at or before second t
   let lo=0,hi=S.length-1,r=null;while(lo<=hi){const m=(lo+hi)>>1;if(S[m].t<=t){r=S[m];lo=m+1}else hi=m-1}return r?r.px:null}
 function span(S,a,b){ // window (a, b]: price change and net deltas
-  const p0=pxAt(S,a),p1=pxAt(S,b);let sn=0,pn=0,n=0;
-  for(const r of S){if(r.t>a&&r.t<=b){sn+=r.sn||0;pn+=r.pn||0;n++}}
-  return{dp:p0!=null&&p1!=null?p1-p0:null,sn,pn,net:sn+pn,n,p0,p1}}
+  const p0=pxAt(S,a),p1=pxAt(S,b);let sn=0,pn=0,ix=0,n=0;
+  for(const r of S){if(r.t>a&&r.t<=b){sn+=r.sn||0;pn+=r.pn||0;ix+=r.ix||0;n++}}
+  return{dp:p0!=null&&p1!=null?p1-p0:null,sn,pn,ix,net:sn+pn,n,p0,p1}}
 // baseline: median |Δprice| over prior completed, non-overlapping intervals of the same length,
 // ending at now−len, now−2·len, … The current interval (now−len, now] is never included.
 // liveFrom: first second of tick-level data; sub-minute baselines never use coarser seeded rows before it
@@ -57,8 +57,30 @@ function baseline(S,now,len,N,cfg,liveFrom){N=N||(cfg||DEF).baseN;const v=[],lim
   return{typ:median(v),n:v.length}}
 function increments(S,now,cfg,liveFrom){cfg=cfg||DEF;
   return [30,60,180,300].map(len=>{const w=span(S,now-len,now),B=baseline(S,now,len,cfg.baseN,cfg,liveFrom),ok=B.n>=cfg.baseMin&&B.typ>0;
-    return{len,dp:w.dp,sn:w.sn,pn:w.pn,net:w.net,typ:B.typ,bn:B.n,rel:ok&&w.dp!=null?w.dp/B.typ:null,full:!!S.length&&S[0].t<=now-len}})}
+    return{len,dp:w.dp,sn:w.sn,pn:w.pn,ix:w.ix,net:w.net,typ:B.typ,bn:B.n,rel:ok&&w.dp!=null?w.dp/B.typ:null,full:!!S.length&&S[0].t<=now-len}})}
 function slices(S,now){return[span(S,now-60,now-30),span(S,now-30,now)]}
+
+/* ---------- 1b. CVD on the increment grid ----------
+   Buckets of `len` seconds anchored on `now`, exactly the windows increments() and baseline() use:
+   bucket k (k = 1 … n) covers (now − k·len, now − (k−1)·len]. Bucket 1 = the live increment row,
+   buckets 2 … baseN+1 = the baseline intervals. Returned oldest first. Each bucket's CVD delta (net)
+   and price change (dp) come from span(), the same function as the increment table, so a bar on the
+   chart and the matching row in the table are the same number. liveFrom = first second of trade data:
+   a bucket that starts before it has incomplete flow and is flagged partial (its delta is a floor). */
+function cvdBuckets(S,now,len,n,liveFrom){const out=[];
+  for(let k=n;k>=1;k--){const b=now-(k-1)*len,a=b-len,w=span(S,a,b);
+    out.push({k,a,b,len,dp:w.dp,sn:w.sn,pn:w.pn,ix:w.ix,net:w.net,n:w.n,p0:w.p0,p1:w.p1,
+      partial:liveFrom==null?!(S.length&&S[0].t<=a):a<liveFrom})}
+  return out}
+// per-second cumulative taker delta rebased to 0 at `from`: row t holds span(S, from, t) (net, sn, pn, ix)
+// and the last price at or before t. t runs from … to inclusive.
+function cvdLine(S,from,to){const out=[];let i=0,sn=0,pn=0,ix=0,px=null;
+  while(i<S.length&&S[i].t<=from){px=S[i].px;i++}
+  for(let t=from;t<=to;t++){while(i<S.length&&S[i].t<=t){const r=S[i];sn+=r.sn||0;pn+=r.pn||0;ix+=r.ix||0;if(r.px!=null)px=r.px;i++}
+    out.push({t,sn,pn,ix,net:sn+pn,px})}
+  return out}
+// 15-minute market window marks for a chart (unix s): open, settlement-window start (close − 60), close
+function windowMarks(openMs,closeMs){const o=Math.round(openMs/1000),c=Math.round(closeMs/1000);return{open:o,settle:c-60,close:c}}
 
 /* accelerating / stalling. dir = setup direction (+1 up, −1 down) or 0 = use the flow side. */
 function classify(s1,s2,dir,cfg){cfg=cfg||DEF;
@@ -187,6 +209,6 @@ function evaluateGate(rows,cfg){cfg=cfg||DEF;const R=rows.filter(r=>r.result&&r.
   const pass=!reasons.length;
   return{pass,enabled:pass&&!!cfg.actionable,nTrain:tr.length,nTest:te.length,brierBase:bB,brierSetup:bS,edge,real,shift,reasons}}
 
-const api={DEF,median,pxAt,span,baseline,increments,slices,classify,swing,absorbed,fresh,step,label,twAvg,requiredAvg,settleSide,round2,gapTrend,direction,mismatch,pBase,evaluateGate,Phi};
+const api={DEF,median,pxAt,span,baseline,increments,cvdBuckets,cvdLine,windowMarks,slices,classify,swing,absorbed,fresh,step,label,twAvg,requiredAvg,settleSide,round2,gapTrend,direction,mismatch,pBase,evaluateGate,Phi};
 if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.Setup15=api;
 })(typeof window!=='undefined'?window:globalThis);
