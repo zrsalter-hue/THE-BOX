@@ -115,7 +115,7 @@ details{margin-top:12px}summary{cursor:pointer;color:var(--mute);font-size:14px;
 #suSlices{font-size:15px;margin-top:8px;padding:8px 10px;border-radius:8px;background:#161c25}
 #suStrike{font-size:13.5px;gap:4px 12px}
 #suFin{font-size:13.5px}
-.sufig{height:clamp(340px,46vh,520px);margin-top:6px}
+.sufig{height:clamp(320px,41vh,500px);margin-top:6px}
 .such{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px}
 .such h3{margin:0;font:600 13px Inter,sans-serif;color:var(--ink)}
 .sug2{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:18px;margin-top:14px;align-items:start}
@@ -1014,13 +1014,13 @@ function suChart(){const x=suX;if(!x)return;const {Sr,now,H,inc,K}=x,g=suG;
   for(let k=0;k<=3;k++){const y=T+PH*k/3;g.beginPath();g.moveTo(L,y);g.lineTo(W-R,y);g.stroke();g.textAlign='left';g.fillText('$'+Math.round(pmx-(pmx-pmn)*k/3).toLocaleString(),W-R+6,y)}
   for(let k=0;k<=2;k++){const y=CT+CH*k/2;g.beginPath();g.moveTo(L,y);g.lineTo(W-R,y);g.stroke();g.textAlign='right';g.fillText(fmt(cmx-(cmx-cmn)*k/2),L-6,y)}
   g.setLineDash([3,3]);g.strokeStyle='#3a4655';g.beginPath();g.moveTo(L,yc(0));g.lineTo(W-R,yc(0));g.stroke();g.setLineDash([]);
-  g.textAlign='right';g.fillText('CVD',L-6,CT-2);g.fillText('Price',L-6,T+8);
+  g.textAlign='left';g.fillStyle='#8592a3';g.fillText('CVD since open',L+4,CT+8);g.fillText('Price',L+4,T+8);
   // vertical marks: open, settlement window, close, now
-  const vline=(t,col,lab,dash)=>{const X=xs(t);g.strokeStyle=col;g.setLineDash(dash||[]);g.beginPath();g.moveTo(X,T);g.lineTo(X,Hh-30);g.stroke();g.setLineDash([]);
-    if(lab){g.fillStyle=col;g.textAlign='center';g.textBaseline='top';g.fillText(lab,X,Hh-28)}};
+  const vline=(t,col,lab,dash,top)=>{const X=xs(t);g.strokeStyle=col;g.setLineDash(dash||[]);g.beginPath();g.moveTo(X,T);g.lineTo(X,Hh-30);g.stroke();g.setLineDash([]);
+    if(lab){g.fillStyle=col;g.textAlign=top?'right':'center';g.textBaseline='top';g.fillText(lab,top?X-3:X,top?T+2:Hh-28)}};
   const hm=t=>new Date(t*1000).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}).replace(/\s?[AP]M/,'');
   for(let t=x0;t<=x1;t+=300)if(t!==M.open&&t!==M.close)vline(t,'#1f2733',hm(t));
-  vline(M.open,'#8592a3','open '+hm(M.open),[4,3]);vline(M.settle,'#f7931a','settle 60s',[4,3]);vline(M.close,'#8592a3','close '+hm(M.close),[4,3]);vline(now,'#e8edf355','');
+  vline(M.open,'#8592a3','open '+hm(M.open),[4,3]);vline(M.settle,'#f7931a','settlement 60s →',[4,3],1);vline(M.close,'#8592a3','close '+hm(M.close),[4,3]);vline(now,'#e8edf355','');
   // strike
   if(K){const y=yp(K);g.strokeStyle='#ffd166';g.lineWidth=1.4;g.setLineDash([6,4]);g.beginPath();g.moveTo(L,y);g.lineTo(W-R,y);g.stroke();g.setLineDash([]);
     g.fillStyle='#ffd166';g.textAlign='left';g.textBaseline='bottom';g.fillText('Strike $'+K.toLocaleString('en-US',{maximumFractionDigits:2})+' · '+(KS.src||''),L+4,y-2)}
@@ -1035,7 +1035,7 @@ function suChart(){const x=suX;if(!x)return;const {Sr,now,H,inc,K}=x,g=suG;
     g.fillRect(X0,b.net>=0?mid-h:mid,w,h);
     if(b.b===now){g.strokeStyle='#e8edf3';g.strokeRect(X0-.5,BT,w+1,BH)}
     if(b.dp!=null){const X=(X0+X1)/2,Y=mid-(BH/2-3)*b.dp/dm;g.fillStyle=b.dp>=0?'#c9ffe6':'#ffd0d4';g.beginPath();g.moveTo(X,Y-4);g.lineTo(X+4,Y);g.lineTo(X,Y+4);g.lineTo(X-4,Y);g.fill()}
-    if(w>=30&&b.dp!=null){g.fillStyle='#8592a3';g.textAlign='center';g.textBaseline=b.net>=0?'top':'bottom';g.fillText((b.dp>=0?'+':'−')+'$'+Math.abs(b.dp).toFixed(0),(X0+X1)/2,b.net>=0?mid+2:mid-2)}}
+    if(w>=30&&b.dp!=null&&!b.partial){g.fillStyle='#8592a3';g.textAlign='center';g.textBaseline=b.net>=0?'top':'bottom';g.fillText((b.dp>=0?'+':'−')+'$'+Math.abs(b.dp).toFixed(0),(X0+X1)/2,b.net>=0?mid+2:mid-2)}}
   g.fillStyle='#8592a3';g.textAlign='right';g.textBaseline='middle';g.fillText('Δ '+fmt(bm,false),L-6,BT+6);g.fillText((suLen<60?suLen+'s':suLen/60+'m')+' bkts',L-6,mid);
   g.textAlign='left';g.fillText('◆ ±$'+dm.toFixed(0),W-R+6,BT+6);
   if(stale){g.fillStyle='#f0434f';g.font='600 13px Inter,sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('STALE FEED · '+stTxt,(L+W-R)/2,CT+CH/2);g.font='11px Inter,sans-serif'}
