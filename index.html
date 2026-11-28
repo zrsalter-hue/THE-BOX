@@ -45,7 +45,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .div{margin-top:12px;padding:10px 12px;border-radius:8px;background:#161c25;font-size:14px}
 .fig{position:relative;height:clamp(300px,42vh,460px)}
 .fig canvas{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair}
-#tip,.tip{position:absolute;pointer-events:none;background:#0a0d12ee;border:1px solid var(--line);border-radius:6px;padding:6px 9px;font-size:12px;display:none;white-space:nowrap}
+#tip{position:absolute;pointer-events:none;background:#0a0d12ee;border:1px solid var(--line);border-radius:6px;padding:6px 9px;font-size:12px;display:none;white-space:nowrap}
 .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--mute)}
 .legend span::before{content:"";display:inline-block;width:14px;height:3px;margin-right:6px;vertical-align:3px;background:var(--c)}
 .tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:14px}
@@ -105,22 +105,6 @@ details{margin-top:12px}summary{cursor:pointer;color:var(--mute);font-size:14px;
 #etfBars .c span{font-size:10px;color:var(--mute);text-align:center;white-space:nowrap;overflow:hidden}
 .etfg{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr) minmax(0,1fr);gap:18px}
 @media(max-width:900px){.etfg{grid-template-columns:minmax(0,1fr)}#etfBars .c span{font-size:9px}}
-/* 15-Minute BTC Setup */
-#suCard{margin-bottom:14px;border-width:2px}#suCard.b{border-color:var(--buy)}#suCard.s{border-color:var(--sell)}
-.sug{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1.25fr) minmax(0,1fr);gap:18px;align-items:start}
-#suState{font-size:clamp(26px,3.6vw,38px);line-height:1.08}
-#suTxt{white-space:pre-wrap;font-size:14px;line-height:1.6;background:#0d1218;border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-top:8px;min-height:150px}
-#suFlags .tag{font-weight:600;margin-top:8px}.tag.warn{border-color:var(--btc);color:var(--btc)}.tag.bad{border-color:var(--sell);color:var(--sell)}.tag.good{border-color:var(--buy);color:var(--buy)}
-#suInc td,#suInc th,#suMach td,#suMach th,#suHealthT td,#suLogT td,#suLogT th{font-size:12.5px;padding:5px 4px}
-#suSlices{font-size:15px;margin-top:8px;padding:8px 10px;border-radius:8px;background:#161c25}
-#suStrike{font-size:13.5px;gap:4px 12px}
-#suFin{font-size:13.5px}
-.sufig{height:clamp(320px,41vh,500px);margin-top:6px}
-.such{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px}
-.such h3{margin:0;font:600 13px Inter,sans-serif;color:var(--ink)}
-.sug2{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:18px;margin-top:14px;align-items:start}
-@media(max-width:1100px){.sug{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
-@media(max-width:900px){.sug,.sug2{grid-template-columns:minmax(0,1fr)}}
 @media(prefers-reduced-motion:reduce){.gauge div{transition:none}}
 </style>
 </head>
@@ -132,68 +116,6 @@ details{margin-top:12px}summary{cursor:pointer;color:var(--mute);font-size:14px;
   <div><div id="price" class="big">—</div><div id="pxSrc" class="mute" style="font-size:12px">waiting for trades</div></div>
   <div class="chips" id="chips"></div>
 </header>
-
-<section class="card" id="suCard">
-  <div class="head"><h2>15‑Minute BTC Setup · KXBTC15M · setup alerts only, never trades</h2><span id="suHead" class="mute" style="font-size:12px">Starting…</span></div>
-  <div class="sug">
-    <div>
-      <div id="suState" class="big mute">NO SETUP</div>
-      <div id="suTxt" class="mute">Waiting for trades and 1‑minute candles…</div>
-      <div id="suFlags"></div>
-    </div>
-    <div>
-      <div class="mute" style="font-size:12px;margin-bottom:4px">Increments · price change, × typical move (rolling median of prior completed intervals), CVD Δ (taker buy − sell) over the same window</div>
-      <table id="suInc"><thead><tr><th>Window</th><th>Δ BTC</th><th>× typical</th><th>Typical |Δ|</th><th>Spot CVD Δ</th><th>Perp CVD Δ</th><th>CVD Δ</th><th title="Coinbase + Kraken + Bitstamp, the 3 BRTI-estimate venues">Index CVD Δ</th><th class="hide-s">Base n</th></tr></thead><tbody></tbody></table>
-      <div id="suSlices">—</div>
-      <div class="mute" style="font-size:12px;margin-top:6px" id="suSliceWhy"></div>
-    </div>
-    <div>
-      <div class="kv" id="suStrike">
-        <span class="mute">Contract</span><b id="suTk">—</b>
-        <span class="mute">Strike</span><b id="suK">—</b>
-        <span class="mute">Seconds remaining</span><b id="suLeft">—</b>
-        <span class="mute" id="suIdxL">BRTI estimate</span><b id="suIdx">—</b>
-        <span class="mute">Gap to strike</span><b id="suGap">—</b>
-        <span class="mute">Gap trend (10s)</span><b id="suGapT">—</b>
-        <span class="mute">Gap in σ to close</span><b id="suZ">—</b>
-        <span class="mute">Baseline P(YES)</span><b id="suPB">—</b>
-        <span class="mute">YES bid / ask</span><b id="suYes">—</b>
-        <span class="mute">NO bid / ask</span><b id="suNo">—</b>
-      </div>
-      <div class="div" id="suFin">Settlement window opens in the final 60 seconds.</div>
-    </div>
-  </div>
-  <div class="such"><h3>Price, strike &amp; CVD · current 15‑min window · bars on the increment grid</h3>
-    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span id="suCvSt" class="mute" style="font-size:12px">waiting for trades</span>
-    <div class="seg" id="suBk"><button data-m="30">30s</button><button data-m="60" class="on">1m</button><button data-m="180">3m</button><button data-m="300">5m</button></div></div></div>
-  <div class="fig sufig" id="suFig"><canvas id="suCv"></canvas><div id="suTip" class="tip"></div></div>
-  <div class="legend" style="margin-top:6px"><span style="--c:#e8edf3">Price (trade tape)</span><span style="--c:var(--btc)">BRTI estimate (3‑venue median)</span><span style="--c:#ffd166">Strike</span><span style="--c:#18c784">CVD all venues</span><span style="--c:var(--spot)">Spot CVD</span><span style="--c:var(--perp)">Perp CVD</span><span style="--c:#e8edf3;opacity:.6">Index‑venue CVD (CB+KRK+BST)</span><span>Bars: CVD Δ per bucket, ◆ = Δ BTC in the same bucket · buckets end at now, the same windows as the increment table (rightmost bar = table row) · CVD rebased to 0 at window open · grey = before this page had trade data</span></div>
-  <div class="sug2">
-    <div><div class="mute" style="font-size:12px;margin-bottom:4px">Setup state machines (both directions run independently)</div>
-      <table id="suMach"><thead><tr><th>Side</th><th>State</th><th>Frozen level</th><th>Leg extreme</th><th>Retest</th><th>Spot / perp since break</th><th>Grade</th><th>Age</th></tr></thead><tbody></tbody></table></div>
-    <div><div class="mute" style="font-size:12px;margin-bottom:4px">Data health · alerts that depend on stale data are suppressed</div>
-      <table id="suHealthT"><tbody></tbody></table></div>
-  </div>
-  <details><summary>Setup log, export and actionable‑alert gate (<span id="suLogN">0</span>)</summary>
-    <div id="suGate" class="div" style="margin:8px 0"></div>
-    <div class="scroll" style="max-height:340px;overflow-y:auto"><table id="suLogT"><thead><tr><th>Time</th><th>Event</th><th>Level</th><th>30s · 1m Δ</th><th>Spot / perp 1m</th><th>Left</th><th>Gap</th><th>YES / NO ask</th><th>Result</th></tr></thead><tbody></tbody></table></div>
-    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button type="button" class="btn" id="suCsv">Download CSV</button><button type="button" class="btn" id="suJson">Download JSON</button><span id="suLogMsg" class="mute" style="font-size:13px;align-self:center"></span></div>
-    <div class="note">Every state change is logged with its timestamp, frozen level, 30s/1m/3m/5m increments, spot and perp flow, time left, strike distance, the executable YES/NO quote and, after close, the Kalshi settlement. "Retest pending" breaks are logged as their own path. Entries share the browser's signal log with the edge scanner, so they also appear in its alert log.</div>
-  </details>
-  <details><summary>Research parameters (all cutoffs are untested starting values)</summary>
-    <form class="cfg" id="suCfgF"></form>
-    <div style="display:flex;gap:8px;margin-top:8px"><button type="button" class="tag" id="suCfgReset" style="background:none;color:var(--mute);cursor:pointer;min-height:36px">Reset to defaults</button></div>
-    <div class="note">Spot/perp nets are taker buy $ − sell $ across this page's venues. Typical move = median |Δprice| of the last N completed, non‑overlapping intervals of the same length; the current interval is excluded. Until the page has its own history, 1m/3m/5m baselines are seeded from Coinbase 1‑minute candles. Swing levels and the settlement window use the BRTI estimate (median of Coinbase, Kraken, Bitstamp).</div>
-  </details>
-</section>
-
-<section class="card" style="margin-bottom:14px">
-  <div class="head"><h2>Cumulative volume delta vs price</h2>
-    <div class="seg" id="cwin"><button data-m="5">5m</button><button data-m="15" class="on">15m</button><button data-m="60">1h</button><button data-m="240">4h</button></div>
-  </div>
-  <div class="fig" id="fig"><canvas id="cv"></canvas><div id="tip"></div></div>
-  <div class="legend" style="margin-top:8px"><span style="--c:var(--btc)">CVD all venues</span><span style="--c:var(--spot)">Spot CVD</span><span style="--c:var(--perp)">Perp CVD</span><span style="--c:#8592a3">Price (right axis)</span><span>Bars: CVD Δ per bucket on the setup increment grid (30s for 5m/15m, 1m for 1h, 5m for 4h; buckets end at now) · dashed gold = strike · CVD rebased to 0 at left edge · axis scale ignores a single spike</span></div>
-</section>
 
 <section class="card" id="edgeCard">
   <div class="head"><h2>Edge scanner · Kalshi BTC 15‑min (alerts only, never trades)</h2>
@@ -299,6 +221,13 @@ details{margin-top:12px}summary{cursor:pointer;color:var(--mute);font-size:14px;
   </section>
 </div>
 
+<section class="card" style="margin-bottom:14px">
+  <div class="head"><h2>Cumulative volume delta vs price</h2>
+    <div class="seg" id="cwin"><button data-m="5">5m</button><button data-m="15" class="on">15m</button><button data-m="60">1h</button><button data-m="240">4h</button></div>
+  </div>
+  <div class="fig" id="fig"><canvas id="cv"></canvas><div id="tip"></div></div>
+  <div class="legend" style="margin-top:8px"><span style="--c:var(--btc)">CVD all venues</span><span style="--c:var(--spot)">Spot CVD</span><span style="--c:var(--perp)">Perp CVD</span><span style="--c:#8592a3">Price (right axis)</span><span>Bars: net delta per slice · CVD rebased to 0 at left edge</span></div>
+</section>
 
 <section class="card" style="margin-bottom:14px">
   <div class="head"><h2>Absorption · is the flow moving price?</h2>
@@ -397,7 +326,6 @@ details{margin-top:12px}summary{cursor:pointer;color:var(--mute);font-size:14px;
 <p class="note">How it works: every trade from each venue is tagged by the aggressor (taker) side. CVD = running sum of taker buy $ − taker sell $. Buyer share = taker buy $ ÷ total taker $. Any venue that blocks your region simply shows red and is left out of the totals.</p>
 </div>
 
-<script src="setup15.js?v=4"></script>
 <script>
 {
 const $=id=>document.getElementById(id);
@@ -405,15 +333,15 @@ const fmt=(v,sign=true)=>{const a=Math.abs(v),s=v<0?'−':(v>0&&sign?'+':'');ret
 const cls=v=>v>0?'buy':v<0?'sell':'';
 const setNum=(el,v,sign=true)=>{el.textContent=fmt(v,sign);el.className=el.className.replace(/\b(buy|sell)\b/g,'').trim()+' '+cls(v)};
 const pxFmt=p=>p?'$'+p.toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1}):'—';
-const binParse=m=>m.e==='aggTrade'?[[+m.p,+m.q,!m.m,m.T]]:null;
+const binParse=m=>m.e==='aggTrade'?[[+m.p,+m.q,!m.m]]:null;
 const EX=[
- {id:'binf',rest:{u:()=>'https://fapi.binance.com/fapi/v1/aggTrades?symbol=BTCUSDT&limit=100',rows:j=>Array.isArray(j)?j.map(t=>[t.a,+t.p,+t.q,!t.m,t.T]):[]},name:'Binance perp',type:'perp',url:'wss://fstream.binance.com/ws/btcusdt@aggTrade',parse:binParse},
- {id:'byb',rest:{u:()=>'https://api.bybit.com/v5/market/recent-trade?category=linear&symbol=BTCUSDT&limit=100',rows:j=>((j.result||{}).list||[]).map(t=>[t.execId,+t.price,+t.size,t.side==='Buy',t.time])},name:'Bybit perp',type:'perp',url:'wss://stream.bybit.com/v5/public/linear',sub:{op:'subscribe',args:['publicTrade.BTCUSDT']},ping:{op:'ping'},parse:m=>m.topic&&Array.isArray(m.data)?m.data.map(t=>[+t.p,+t.v,t.S==='Buy',t.T]):null},
- {id:'okx',rest:{u:()=>'https://www.okx.com/api/v5/market/trades?instId=BTC-USDT-SWAP&limit=100',rows:j=>(j.data||[]).map(t=>[t.tradeId,+t.px,+t.sz*0.01,t.side==='buy',+t.ts])},name:'OKX perp',type:'perp',url:'wss://ws.okx.com:8443/ws/v5/public',sub:{op:'subscribe',args:[{channel:'trades',instId:'BTC-USDT-SWAP'}]},ping:'ping',parse:m=>m.arg&&Array.isArray(m.data)?m.data.map(t=>[+t.px,+t.sz*0.01,t.side==='buy',+t.ts]):null},
- {id:'bins',rest:{u:()=>'https://api.binance.com/api/v3/aggTrades?symbol=BTCUSDT&limit=100',rows:j=>Array.isArray(j)?j.map(t=>[t.a,+t.p,+t.q,!t.m,t.T]):[]},name:'Binance spot',fallback:{name:'Binance.US spot',url:'wss://stream.binance.us:9443/ws/btcusd@aggTrade',rest:{u:()=>'https://api.binance.us/api/v3/aggTrades?symbol=BTCUSD&limit=100',rows:j=>Array.isArray(j)?j.map(t=>[t.a,+t.p,+t.q,!t.m,t.T]):[]}},type:'spot',url:'wss://stream.binance.com:9443/ws/btcusdt@aggTrade',parse:binParse},
- {id:'cb',rest:{u:()=>'https://api.exchange.coinbase.com/products/BTC-USD/trades?limit=100',rows:j=>Array.isArray(j)?j.map(t=>[t.trade_id,+t.price,+t.size,t.side==='sell',t.time]):[]},name:'Coinbase spot',type:'spot',us:1,url:'wss://ws-feed.exchange.coinbase.com',sub:{type:'subscribe',product_ids:['BTC-USD'],channels:['matches']},parse:m=>m.type==='match'?[[+m.price,+m.size,m.side==='sell',m.time]]:null},
- {id:'bst',rest:{u:()=>'https://www.bitstamp.net/api/v2/transactions/btcusd/?time=minute',rows:j=>Array.isArray(j)?j.map(t=>[t.tid,+t.price,+t.amount,String(t.type)==='0',t.date]):[]},name:'Bitstamp spot',type:'spot',us:1,url:'wss://ws.bitstamp.net',sub:{event:'bts:subscribe',data:{channel:'live_trades_btcusd'}},parse:m=>m.event==='trade'&&m.data?[[+m.data.price,+m.data.amount,m.data.type==0,m.data.timestamp||m.data.date]]:null},
- {id:'krk',rest:{u:e=>'https://api.kraken.com/0/public/Trades?pair=XBTUSD'+(e.since?'&since='+e.since:''),rows:(j,e)=>{const r=j.result||{};if(r.last)e.since=r.last;const k=Object.keys(r).find(x=>x!=='last');return k?r[k].map(t=>[t[2]+':'+t[0]+':'+t[1],+t[0],+t[1],t[3]==='b',t[2]]):[]}},name:'Kraken spot',type:'spot',us:1,url:'wss://ws.kraken.com/v2',sub:{method:'subscribe',params:{channel:'trade',symbol:['BTC/USD']}},ping:{method:'ping'},parse:m=>m.channel==='trade'&&m.type==='update'?m.data.map(t=>[+t.price,+t.qty,t.side==='buy',t.timestamp||t.time]):null},
+ {id:'binf',rest:{u:()=>'https://fapi.binance.com/fapi/v1/aggTrades?symbol=BTCUSDT&limit=100',rows:j=>Array.isArray(j)?j.map(t=>[t.a,+t.p,+t.q,!t.m]):[]},name:'Binance perp',type:'perp',url:'wss://fstream.binance.com/ws/btcusdt@aggTrade',parse:binParse},
+ {id:'byb',rest:{u:()=>'https://api.bybit.com/v5/market/recent-trade?category=linear&symbol=BTCUSDT&limit=100',rows:j=>((j.result||{}).list||[]).map(t=>[t.execId,+t.price,+t.size,t.side==='Buy'])},name:'Bybit perp',type:'perp',url:'wss://stream.bybit.com/v5/public/linear',sub:{op:'subscribe',args:['publicTrade.BTCUSDT']},ping:{op:'ping'},parse:m=>m.topic&&Array.isArray(m.data)?m.data.map(t=>[+t.p,+t.v,t.S==='Buy']):null},
+ {id:'okx',rest:{u:()=>'https://www.okx.com/api/v5/market/trades?instId=BTC-USDT-SWAP&limit=100',rows:j=>(j.data||[]).map(t=>[t.tradeId,+t.px,+t.sz*0.01,t.side==='buy'])},name:'OKX perp',type:'perp',url:'wss://ws.okx.com:8443/ws/v5/public',sub:{op:'subscribe',args:[{channel:'trades',instId:'BTC-USDT-SWAP'}]},ping:'ping',parse:m=>m.arg&&Array.isArray(m.data)?m.data.map(t=>[+t.px,+t.sz*0.01,t.side==='buy']):null},
+ {id:'bins',rest:{u:()=>'https://api.binance.com/api/v3/aggTrades?symbol=BTCUSDT&limit=100',rows:j=>Array.isArray(j)?j.map(t=>[t.a,+t.p,+t.q,!t.m]):[]},name:'Binance spot',type:'spot',url:'wss://stream.binance.com:9443/ws/btcusdt@aggTrade',parse:binParse},
+ {id:'cb',rest:{u:()=>'https://api.exchange.coinbase.com/products/BTC-USD/trades?limit=100',rows:j=>Array.isArray(j)?j.map(t=>[t.trade_id,+t.price,+t.size,t.side==='sell']):[]},name:'Coinbase spot',type:'spot',us:1,url:'wss://ws-feed.exchange.coinbase.com',sub:{type:'subscribe',product_ids:['BTC-USD'],channels:['matches']},parse:m=>m.type==='match'?[[+m.price,+m.size,m.side==='sell']]:null},
+ {id:'bst',rest:{u:()=>'https://www.bitstamp.net/api/v2/transactions/btcusd/?time=minute',rows:j=>Array.isArray(j)?j.map(t=>[t.tid,+t.price,+t.amount,String(t.type)==='0']):[]},name:'Bitstamp spot',type:'spot',us:1,url:'wss://ws.bitstamp.net',sub:{event:'bts:subscribe',data:{channel:'live_trades_btcusd'}},parse:m=>m.event==='trade'&&m.data?[[+m.data.price,+m.data.amount,m.data.type===0]]:null},
+ {id:'krk',rest:{u:e=>'https://api.kraken.com/0/public/Trades?pair=XBTUSD'+(e.since?'&since='+e.since:''),rows:(j,e)=>{const r=j.result||{};if(r.last)e.since=r.last;const k=Object.keys(r).find(x=>x!=='last');return k?r[k].map(t=>[t[2]+':'+t[0]+':'+t[1],+t[0],+t[1],t[3]==='b']):[]}},name:'Kraken spot',type:'spot',us:1,url:'wss://ws.kraken.com/v2',sub:{method:'subscribe',params:{channel:'trade',symbol:['BTC/USD']}},ping:{method:'ping'},parse:m=>m.channel==='trade'&&m.type==='update'?m.data.map(t=>[+t.price,+t.qty,t.side==='buy']):null},
 ];
 const PX_PRI=['cb','binf','byb','okx','bins','bst','krk'];
 const B=new Map(),order=[];const KEEP=4*3600+60;
@@ -423,58 +351,34 @@ function chips(){$('chips').innerHTML=EX.map(e=>`<span class="chip ${e.status||'
 function connect(e){
   e.status='connecting';chips();
   let ws;try{ws=new WebSocket(e.url)}catch(err){e.status='down';chips();return retry(e)}
-  attachWs(e,ws);
-  ws.onopen=()=>{e.delay=2000;if(e.sub)ws.send(JSON.stringify(e.sub))};
+  e.ws=ws;
+  ws.onopen=()=>{e.delay=2000;if(e.sub)ws.send(JSON.stringify(e.sub));if(e.ping)e.pt=setInterval(()=>{try{ws.send(typeof e.ping==='string'?e.ping:JSON.stringify(e.ping))}catch(_){}} ,20000)};
+  ws.onmessage=ev=>{let m;try{m=JSON.parse(ev.data)}catch(_){return}const r=e.parse(m);if(!r)return;
+    if(e.status!=='live'){e.status='live';chips()}e.last=Date.now();
+    for(const [p,q,isBuy] of r){if(p>0&&q>0)add(e,p,q,isBuy)}};
+  ws.onclose=()=>{clearInterval(e.pt);if(!e.last)e.fails=(e.fails||0)+1;e.status='down';chips();retry(e)};
   clearTimeout(e.wt);e.wt=setTimeout(()=>{if(!e.last&&!e.polling){e.fails=9;try{ws.close()}catch(_){}}},8000);
+  ws.onerror=()=>{try{ws.close()}catch(_){}};
 }
-function useFallback(e){if(!e.fallback||e.usingFb)return false;e.usingFb=true;
-  e.url=e.fallback.url;if(e.fallback.rest)e.rest=e.fallback.rest;if(e.fallback.sub)e.sub=e.fallback.sub;if(e.fallback.parse)e.parse=e.fallback.parse;
-  e.name=e.fallback.name||e.name.replace(/ ·.*/,'');e.fails=0;e.delay=2000;e.last=0;return true}
-function retry(e){if(e.polling||e.probing)return;
-  if(!e.last&&e.fails>=2&&useFallback(e)){setTimeout(()=>connect(e),400);return}
-  if(e.fails>=2&&e.rest){startPoll(e);return}
-  e.delay=Math.min((e.delay||2000)*1.6,30000);setTimeout(()=>connect(e),e.delay)}
-function startPoll(e){if(e.polling)return;e.polling=true;e.name=e.name.replace(/ ·.*/,'')+' · polling';e.status='connecting';chips();e.seen=new Set();let first=true;
-  const go=async()=>{if(!e.polling)return;try{const r=await fetch(e.rest.u(e),{cache:'no-store'});if(!r.ok)throw 0;const j=await r.json();const rows=e.rest.rows(j,e);
+function retry(e){if(e.polling)return;if(e.fails>=2&&e.rest){startPoll(e);return}e.delay=Math.min((e.delay||2000)*1.6,30000);setTimeout(()=>connect(e),e.delay)}
+function startPoll(e){e.polling=true;e.name=e.name.replace(/ ·.*/,'')+' · polling';e.status='connecting';chips();e.seen=new Set();let first=true;
+  const go=async()=>{try{const r=await fetch(e.rest.u(e),{cache:'no-store'});if(!r.ok)throw 0;const j=await r.json();const rows=e.rest.rows(j,e);
       const fresh=rows.filter(x=>!e.seen.has(String(x[0])));rows.forEach(x=>e.seen.add(String(x[0])));
       if(e.seen.size>5000)e.seen=new Set(rows.map(x=>String(x[0])));
       if(rows.length){if(e.status!=='live'){e.status='live';chips()}e.last=Date.now();
         if(first&&rows[0])e.px=rows[0][1];
-        // first batch is applied only when rows have timestamps, so history lands in the right second instead of now
-        const batch=first?rows:fresh;for(const rec of batch.slice().reverse()){const p=rec[1],q=rec[2],b=rec[3],ts=rec[4];if(p>0&&q>0&&(!first||ts))add(e,p,q,b,ts)}}
-      first=false
-    }catch(_){if(e.status!=='down'){e.status='down';chips()}}
-    if(e.polling)setTimeout(go,e.status==='live'?1000:5000)};go()}
-function attachWs(e,ws){e.ws=ws;
-  if(e.ping){clearInterval(e.pt);e.pt=setInterval(()=>{try{ws.send(typeof e.ping==='string'?e.ping:JSON.stringify(e.ping))}catch(_){}},20000)}
-  ws.onmessage=ev=>{let m;try{m=JSON.parse(ev.data)}catch(_){return}const r=e.parse(m);if(!r)return;
-    if(e.status!=='live'){e.status='live';chips()}e.last=Date.now();
-    for(const [p,q,isBuy,ts] of r){if(p>0&&q>0)add(e,p,q,isBuy,ts)}};
-  ws.onclose=()=>{clearInterval(e.pt);if(e.ws!==ws)return;if(!e.last)e.fails=(e.fails||0)+1;e.status='down';chips();retry(e)};
-  ws.onerror=()=>{try{ws.close()}catch(_){}}}
-function probeWs(e){if(e.probing||!e.url)return;e.probing=true;let ws;try{ws=new WebSocket(e.url)}catch(_){e.probing=false;return}
-  const t=setTimeout(()=>{e.probing=false;try{ws.close()}catch(_){}},8000);
-  ws.onopen=()=>{if(e.sub)try{ws.send(JSON.stringify(e.sub))}catch(_){}};
-  ws.onmessage=ev=>{let m;try{m=JSON.parse(ev.data)}catch(_){return}const r=e.parse(m);if(!r||!r.length)return;
-    clearTimeout(t);e.polling=false;e.name=e.name.replace(/ · polling/,'');e.fails=0;e.delay=2000;e.status='live';e.last=Date.now();chips();
-    e.probing=false;attachWs(e,ws);
-    for(const [p,q,isBuy,ts] of r){if(p>0&&q>0)add(e,p,q,isBuy,ts)}};
-  ws.onerror=()=>{};ws.onclose=()=>{clearTimeout(t);if(e.probing)e.probing=false}}
-// watchdog: recycle a silent live socket, restart a dead poller, and periodically try to upgrade polling back to WS
-setInterval(()=>{const now=Date.now();
-  for(const e of EX){const age=e.last?now-e.last:Infinity;
-    if(!e.polling&&e.status==='live'&&age>20000){try{e.ws&&e.ws.close()}catch(_){}}
-    if(e.polling){if(age>45000&&e.status!=='down'){e.status='down';chips()}
-      if(!e.nextWs||now>=e.nextWs){e.nextWs=now+60000;probeWs(e)}}}
-},5000);
+        if(!first)for(const [,p,q,b] of fresh.reverse())if(p>0&&q>0)add(e,p,q,b)}
+      first=false}
+    catch(_){if(e.status!=='down'){e.status='down';chips()}}
+    setTimeout(go,e.status==='live'?1000:5000)};go()}
+// watchdog: a socket that goes silent for 60s gets recycled
+setInterval(()=>{for(const e of EX)if(!e.polling&&e.status==='live'&&Date.now()-e.last>60000){try{e.ws.close()}catch(_){}}},15000);
 
-function add(e,p,q,isBuy,ts){
-  const usd=p*q,s=window.Setup15.tradeSecond(ts,Date.now(),KEEP);
-  if(s==null)return;
+function add(e,p,q,isBuy){
+  const usd=p*q,s=Math.floor(Date.now()/1000);
   let b=B.get(s);
-  if(!b){b={t:s,b:0,s:0,sb:0,ss:0,pb:0,ps:0,px:price||p,ex:{}};B.set(s,b);
-    let lo=0,hi=order.length;while(lo<hi){const m=(lo+hi)>>1;if(order[m]<s)lo=m+1;else hi=m}order.splice(lo,0,s);
-    const cut=Math.floor(Date.now()/1000)-KEEP;while(order.length&&order[0]<cut)B.delete(order.shift())}
+  if(!b){b={t:s,b:0,s:0,sb:0,ss:0,pb:0,ps:0,px:price||p,ex:{}};B.set(s,b);order.push(s);
+    while(order.length&&order[0]<s-KEEP)B.delete(order.shift())}
   const k=e.type==='spot'?'s':'p';
   if(isBuy){b.b+=usd;b[k+'b']+=usd}else{b.s+=usd;b[k+'s']+=usd}
   const x=b.ex[e.id]||(b.ex[e.id]=[0,0]);x[isBuy?0:1]+=usd;if(e.us){if(isBuy)b.ub=(b.ub||0)+usd;else b.us=(b.us||0)+usd}
@@ -544,22 +448,22 @@ function renderQuarter(){
 }
 
 // ---------- chart ----------
-const cv=$('cv'),ctx=cv.getContext('2d'),fig=$('fig'),tip=$('tip');let series=[],hoverX=null,mainMarks=null;
+const cv=$('cv'),ctx=cv.getContext('2d'),fig=$('fig'),tip=$('tip');let series=[],hoverX=null;
 function build(){
   const end=nowS(),start=Math.max(end-cwin*60+1,order.length?order[0]:end);series=[];let c=0,sp=0,pp=0,lastPx=0;
-  for(let t=start;t<=end;t++){const b=B.get(t);if(b){c+=b.b-b.s;sp+=b.sb-b.ss;pp+=b.pb-b.ps;lastPx=b.px}series.push({t,c,sp,pp,px:lastPx||null,d:b?b.b-b.s:0,dsn:b?b.sb-b.ss:0,dpn:b?b.pb-b.ps:0,has:!!b})}
+  for(let t=start;t<=end;t++){const b=B.get(t);if(b){c+=b.b-b.s;sp+=b.sb-b.ss;pp+=b.pb-b.ps;lastPx=b.px}series.push({t,c,sp,pp,px:lastPx||null,d:b?b.b-b.s:0})}
 }
-function draw(){try{
+function draw(){
   const W=fig.clientWidth,H=fig.clientHeight,dpr=window.devicePixelRatio||1;
   if(cv.width!==W*dpr||cv.height!==H*dpr){cv.width=W*dpr;cv.height=H*dpr}
   ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
   const L=W<520?60:66,R=W<520?52:70,T=10,LH=(H-30)*0.72,BT=T+LH+12,BH=H-30-LH-12,N=series.length;
   ctx.font='11px Inter,sans-serif';ctx.fillStyle='#8592a3';
   const xs=i=>L+(W-L-R)*i/Math.max(N-1,1);
-  let pmn=Infinity,pmx=-Infinity;const cvals=[];
-  for(const s of series){cvals.push(s.c,s.sp,s.pp);if(s.px){pmn=Math.min(pmn,s.px);pmx=Math.max(pmx,s.px)}}
-  const rr=window.Setup15.robustRange(cvals,{include0:1,minSpan:1}),mn=rr.mn,mx=rr.mx;
-  const ys=v=>T+LH*(1-(Math.max(mn,Math.min(mx,v))-mn)/Math.max(mx-mn,1));
+  let mn=0,mx=0,pmn=Infinity,pmx=-Infinity;
+  for(const s of series){mn=Math.min(mn,s.c,s.sp,s.pp);mx=Math.max(mx,s.c,s.sp,s.pp);if(s.px){pmn=Math.min(pmn,s.px);pmx=Math.max(pmx,s.px)}}
+  if(mx-mn<1){mx+=1;mn-=1}const pad=(mx-mn)*0.08;mx+=pad;mn-=pad;
+  const ys=v=>T+LH*(1-(v-mn)/(mx-mn));
   if(pmn===Infinity){ctx.fillText('Waiting for trades…',L+10,T+20);return}
   if(pmx-pmn<1){pmx+=5;pmn-=5}const ppad=(pmx-pmn)*0.08;pmx+=ppad;pmn-=ppad;
   const yp=v=>T+LH*(1-(v-pmn)/(pmx-pmn));
@@ -576,19 +480,12 @@ function draw(){try{
     series.forEach((s,i)=>{const v=s[key];if(v==null)return;const x=xs(i),y=yf(v);on?ctx.lineTo(x,y):ctx.moveTo(x,y);on=true});ctx.stroke();ctx.setLineDash([])};
   line('px',yp,'#5d6b7d',1.2,[4,3]);line('sp',ys,'#5aa9ff',1.2);line('pp',ys,'#b18cff',1.2);line('c',ys,'#f7931a',2.4);
   // delta bars
-  // delta bars on the Setup15 increment grid: buckets (end − k·len, end − (k−1)·len], same windows as the setup table
-  const t0=series[0].t,tN=series[N-1].t,bl=cwin<=15?30:cwin<=60?60:300,S15m=window.Setup15;
-  const rows=series.filter(s=>s.has).map(s=>({t:s.t,px:s.px,sn:s.dsn,pn:s.dpn}));
-  const bk=S15m.cvdBuckets(rows,tN,bl,Math.ceil(N/bl),order.length?order[0]:tN).filter(b=>b.b>t0);
-  const brr=S15m.robustRange(bk.map(b=>b.net),{include0:1,minSpan:1}),bm=Math.max(1,Math.abs(brr.mx),Math.abs(brr.mn)),mid=BT+BH/2,xt=t=>xs(Math.max(0,t-t0));
+  const slices=W<520?40:80,per=Math.max(1,Math.ceil(N/slices)),bars=[];
+  for(let i=0;i<N;i+=per){let d=0;for(let j=i;j<Math.min(i+per,N);j++)d+=series[j].d;bars.push([i,d])}
+  const bm=Math.max(1,...bars.map(b=>Math.abs(b[1]))),mid=BT+BH/2,bw=Math.max(1,(W-L-R)/bars.length-1.5);
   ctx.strokeStyle='#1f2733';ctx.beginPath();ctx.moveTo(L,mid);ctx.lineTo(W-R,mid);ctx.stroke();
-  for(const b of bk){const h=(BH/2-2)*Math.min(1,Math.abs(b.net)/bm),X0=xt(Math.max(b.a,t0-1)+1),w=Math.max(1,xt(b.b)-X0-1);ctx.fillStyle=b.partial?'#8592a366':b.net>=0?'#18c784':'#f0434f';ctx.fillRect(X0,b.net>=0?mid-h:mid,w,h);
-    if(Math.abs(b.net)>bm*1.01&&w>=24){ctx.fillStyle='#8592a3';ctx.textAlign='center';ctx.textBaseline=b.net>=0?'bottom':'top';ctx.fillText(fmt(b.net),X0+w/2,b.net>=0?mid-h-1:mid+h+1)}}
-  ctx.textAlign='right';ctx.textBaseline='middle';ctx.fillStyle='#8592a3';ctx.fillText('Δ '+fmt(bm,false)+(brr.clipped?' *':''),L-6,BT+6);ctx.fillText((bl<60?bl+'s':bl/60+'m')+' bkts',L-6,mid);
-  // 15-minute market window and strike
-  if(mainMarks){const m=mainMarks,vl=(t,col,lab)=>{if(t<t0||t>tN)return;const X=xt(t);ctx.strokeStyle=col;ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(X,T);ctx.lineTo(X,H-22);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle=col;ctx.textAlign='left';ctx.textBaseline='top';ctx.fillText(lab,X+3,T+2)};
-    vl(m.open,'#8592a3','15m open');vl(m.settle,'#f7931a','settle 60s');
-    if(m.K&&m.K>=pmn&&m.K<=pmx){const y=yp(m.K);ctx.strokeStyle='#ffd166';ctx.setLineDash([6,4]);ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(W-R,y);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#ffd166';ctx.textAlign='right';ctx.textBaseline='bottom';ctx.fillText('Strike $'+m.K.toLocaleString('en-US',{maximumFractionDigits:2}),W-R-4,y-2)}}
+  for(const [i,d] of bars){const h=(BH/2-2)*Math.abs(d)/bm;ctx.fillStyle=d>=0?'#18c784':'#f0434f';ctx.fillRect(xs(i),d>=0?mid-h:mid,bw,h)}
+  ctx.textAlign='right';ctx.textBaseline='middle';ctx.fillStyle='#8592a3';ctx.fillText('Δ '+fmt(bm,false),L-6,BT+6);
   // signal markers
   if(N){const t0=series[0].t;for(const g of sigLog){const i=Math.floor(g.t/1000)-t0;if(i<0||i>=N)continue;const x=xs(i),up=g.side>0,y=up?T+LH-4:T+12;
     ctx.fillStyle=up?'#18c784':'#f0434f';ctx.beginPath();if(up){ctx.moveTo(x,y-12);ctx.lineTo(x-7,y);ctx.lineTo(x+7,y)}else{ctx.moveTo(x,y+12);ctx.lineTo(x-7,y);ctx.lineTo(x+7,y)}ctx.fill()}}
@@ -598,7 +495,7 @@ function draw(){try{
     tip.style.display='block';tip.textContent='';
     [[new Date(s.t*1000).toLocaleTimeString('en-US',{hour12:false}),''],['CVD '+fmt(s.c),cls(s.c)],['Spot '+fmt(s.sp)+' · Perp '+fmt(s.pp),''],['Price '+pxFmt(s.px),'']].forEach(([t,c])=>{const d=document.createElement('div');d.textContent=t;d.className=c;tip.appendChild(d)});
     tip.style.left=Math.min(x+12,W-tip.offsetWidth-4)+'px';tip.style.top='12px'}}else tip.style.display='none';
-}catch(err){try{ctx.fillStyle='#f0434f';ctx.font='12px Inter,sans-serif';ctx.fillText('Chart error: '+err.message,8,20)}catch(_){}console.error(err)}}
+}
 cv.addEventListener('pointermove',e=>{hoverX=e.offsetX;draw()});cv.addEventListener('pointerleave',()=>{hoverX=null;draw()});
 const ro=new ResizeObserver(()=>draw());ro.observe(fig);
 
@@ -790,8 +687,7 @@ function sigTick(){
 }
 setInterval(sigTick,1000);
 // ---------- Kalshi 15m strike ----------
-const KBASE=(()=>{try{const q=new URLSearchParams(location.search).get('kalshiBase');if(q!=null){q?localStorage.setItem('kalshiBase',q):localStorage.removeItem('kalshiBase')}return localStorage.getItem('kalshiBase')||'https://api.elections.kalshi.com/trade-api/v2'}catch(_){return 'https://api.elections.kalshi.com/trade-api/v2'}})();
-const KAL=KBASE+'/markets?series_ticker=KXBTC15M&status=open&limit=50';
+const KAL='https://api.elections.kalshi.com/trade-api/v2/markets?series_ticker=KXBTC15M&status=open&limit=50';
 let KS={},kal={win:0,strike:null,yes:null,no:null,ticker:''},kalErr='',manual={win:0,v:null};const prox=new Map();
 function brti(){const v=['cb','krk','bst'].map(id=>EX.find(e=>e.id===id)).filter(e=>e.px&&e.lt&&Date.now()-e.lt<120000).map(e=>e.px).sort((a,b)=>a-b);
   if(!v.length)return price||0;const m=v.length>>1;return v.length%2?v[m]:(v[m-1]+v[m])/2}
@@ -836,7 +732,7 @@ function kalTick(){
 }
 setInterval(kalTick,1000);
 // ---------- Edge scanner ----------
-const API=KBASE;
+const API='https://api.elections.kalshi.com/trade-api/v2';
 const DEF={min:5,slip:1,size:10,max:90,err:8,exit:3};let C={...DEF};
 try{Object.assign(C,JSON.parse(localStorage.getItem('edgeCfg')||'{}'))}catch(_){}
 const CF={cMin:'min',cSlip:'slip',cSize:'size',cMax:'max',cErr:'err',cExit:'exit'};
@@ -934,253 +830,20 @@ async function settle(){const now=Date.now(),todo=[...new Set(LOG.filter(x=>!x.r
 setInterval(settle,30000);settle();
 function renderLog(){$('logN').textContent=LOG.length;const tb=$('logT').tBodies[0];
   tb.innerHTML=LOG.slice(-25).reverse().map(x=>{const r=x.result?((x.side==='up')===(x.result==='yes')?'<span class="buy">WIN</span>':'<span class="sell">LOSS</span>'):'<span class="mute">pending</span>';
-    return `<tr><td>${new Date(x.t).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}</td><td>${x.type==='edge'?x.action:x.type==='setup'?'Setup '+(x.kind||'').toLowerCase().replace('_',' '):'Flow '+(x.kind==='absorb'?'absorb':x.kind||'')}</td><td>${x.side==='up'?'UP':'DOWN'}</td><td>${x.px!=null?c(x.px):'—'}</td><td>${x.p!=null?(x.p*100).toFixed(0)+'%':'—'}</td><td>${x.edge!=null?(x.edge*100).toFixed(1)+'¢':'—'}</td><td>${r}</td><td class="${cls(x.pnl||0)}">${x.pnl!=null?(x.pnl>=0?'+':'−')+(Math.abs(x.pnl)*100).toFixed(1)+'¢':'—'}</td></tr>`}).join('')||'<tr><td colspan="8" class="mute">No alerts logged yet</td></tr>';
+    return `<tr><td>${new Date(x.t).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}</td><td>${x.type==='edge'?x.action:'Flow '+(x.kind==='absorb'?'absorb':x.kind||'')}</td><td>${x.side==='up'?'UP':'DOWN'}</td><td>${x.px!=null?c(x.px):'—'}</td><td>${x.p!=null?(x.p*100).toFixed(0)+'%':'—'}</td><td>${x.edge!=null?(x.edge*100).toFixed(1)+'¢':'—'}</td><td>${r}</td><td class="${cls(x.pnl||0)}">${x.pnl!=null?(x.pnl>=0?'+':'−')+(Math.abs(x.pnl)*100).toFixed(1)+'¢':'—'}</td></tr>`}).join('')||'<tr><td colspan="8" class="mute">No alerts logged yet</td></tr>';
   const sum2=(t)=>{const d=LOG.filter(x=>x.type===t&&x.result&&x.px!=null);if(!d.length)return null;const w=d.filter(x=>(x.side==='up')===(x.result==='yes')).length;
     const pn=d.reduce((a,x)=>a+(x.pnl||0),0)/d.length,pe=d.filter(x=>x.p!=null);const avgP=pe.length?pe.reduce((a,x)=>a+x.p,0)/pe.length:null;
     return `${d.length} settled · won ${(w/d.length*100).toFixed(0)}%${avgP!=null?` (model expected ${(avgP*100).toFixed(0)}%)`:''} · avg P&L ${(pn*100).toFixed(1)}¢/contract`};
-  const e=sum2('edge'),f=sum2('flow'),su=sum2('setup');$('logSum').innerHTML='';
-  [['Edge alerts: ',e],['Order-flow signals (logged only): ',f],['15m setup alerts (logged only): ',su]].forEach(([l,v])=>{const d=document.createElement('div');d.textContent=l+(v||'none settled yet');$('logSum').appendChild(d)});
+  const e=sum2('edge'),f=sum2('flow');$('logSum').innerHTML='';
+  [['Edge alerts: ',e],['Order-flow signals (logged only): ',f]].forEach(([l,v])=>{const d=document.createElement('div');d.textContent=l+(v||'none settled yet');$('logSum').appendChild(d)});
   if(LOG.filter(x=>x.result).length<100){const d=document.createElement('div');d.className='mute';d.style.fontSize='12px';d.textContent='Treat results as noise until at least 100 settled alerts.';$('logSum').appendChild(d)}}
 renderLog();
-$('logCopy').addEventListener('click',async()=>{const cols=['t','type','action','kind','label','side','ticker','K','idx','dist','z','px','size','p','edge','vol','regime','trigger','inval','level','left','path','result','pnl'];
+$('logCopy').addEventListener('click',async()=>{const cols=['t','type','action','side','ticker','K','idx','dist','z','px','size','p','edge','vol','regime','trigger','inval','result','pnl'];
   const esc=v=>{v=v==null?'':typeof v==='object'?JSON.stringify(v):String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
   const csv=[cols.join(',')].concat(LOG.map(x=>cols.map(k=>esc(k==='t'?new Date(x.t).toISOString():x[k])).join(','))).join('\n');
   try{await navigator.clipboard.writeText(csv);$('logMsg').textContent='Copied '+LOG.length+' rows'}catch(_){$('logMsg').textContent='Copy blocked by this browser'}});
 let clr=0;$('logClr').addEventListener('click',()=>{if(Date.now()-clr<4000){LOG=[];saveLog();renderLog();$('logMsg').textContent='Log cleared'}else{clr=Date.now();$('logMsg').textContent='Tap again to clear the whole log'}});
 setInterval(edgeTick,1000);
-// ---------- 15-Minute BTC Setup (alert-only; pure logic in setup15.js) ----------
-const S15=window.Setup15;
-const SU_CFG={...S15.DEF};try{Object.assign(SU_CFG,JSON.parse(localStorage.getItem('setupCfg')||'{}'))}catch(_){}
-const OFFICIAL_INDEX=null; // hook: set to ()=>({px,t,src}) if a licensed real-time BRTI feed is ever wired in
-let suM={'-1':S15.fresh(-1),'1':S15.fresh(1)},suQs=0,suGapH=[],suCbC=[],suCbT=0,suLastAlert=null;
-const usd=(v,dp=0)=>v==null||!isFinite(v)?'—':(v<0?'−':v>0?'+':'')+'$'+Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:dp,maximumFractionDigits:dp});
-const usdA=(v,dp=2)=>v==null||!isFinite(v)?'—':'$'+v.toLocaleString('en-US',{minimumFractionDigits:dp,maximumFractionDigits:dp});
-const mmss=s=>{s=Math.max(0,Math.round(s));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
-async function suCandles(){try{const r=await fetch('https://api.exchange.coinbase.com/products/BTC-USD/candles?granularity=60',{cache:'no-store'});if(!r.ok)throw 0;
-    suCbC=(await r.json()).map(k=>({t:k[0],l:+k[1],h:+k[2],o:+k[3],c:+k[4]})).sort((a,b)=>a.t-b.t);suCbT=Date.now()}catch(_){}}
-suCandles();setInterval(suCandles,60000);
-// completed + current 1m candles: live BRTI estimate where this page saw ≥45s of the minute, else Coinbase candles
-function suBars(now){const m=new Map();for(const c of suCbC)m.set(c.t,{...c,src:'cb'});
-  const cur=now-now%60;for(let t0=cur-1500;t0<=cur;t0+=60){let o=null,h=-Infinity,l=Infinity,c=null,n=0;
-    for(let k=t0;k<t0+60;k++){const v=prox.get(k);if(v){if(o==null)o=v;h=Math.max(h,v);l=Math.min(l,v);c=v;n++}}
-    if(n>=45)m.set(t0,{t:t0,o,h,l,c,src:'live'})}
-  return [...m.values()].sort((a,b)=>a.t-b.t).filter(c=>c.t>now-7200)}
-// per-second rows for increments: this page's trade buckets, seeded with Coinbase 1m closes before the page opened
-// ix = net taker $ on the 3 BRTI-estimate venues (Coinbase, Kraken, Bitstamp)
-function tradeRows(from){const rows=[];for(const t of order){if(t<from)continue;const b=B.get(t);let ix=0;for(const id of ['cb','krk','bst']){const x=b.ex[id];if(x)ix+=x[0]-x[1]}
-  rows.push({t,px:b.px,sn:b.sb-b.ss,pn:b.pb-b.ps,ix})}return rows}
-function suSeries(now){const rows=[],from=now-(SU_CFG.baseN+2)*300,first=order.length?order[0]:now;
-  for(const c of suCbC)if(c.t+59<first&&c.t+59>=from)rows.push({t:c.t+59,px:c.c,sn:0,pn:0,ix:0});
-  return rows.concat(tradeRows(from))}
-function suVenue(from){const o={};for(let i=order.length-1;i>=0&&order[i]>from;i--){const x=B.get(order[i]);for(const k in x.ex){const y=o[k]||(o[k]=0);o[k]=y+x.ex[k][0]-x.ex[k][1]}}return o}
-function suHealth(nowMs){const age=e=>e.lt?(nowMs-e.lt)/1000:Infinity,st=SU_CFG.staleSec;
-  const spot=EX.filter(e=>e.type==='spot'&&age(e)<st),perp=EX.filter(e=>e.type==='perp'&&age(e)<st),idx=['cb','krk','bst'].map(id=>EX.find(e=>e.id===id)).filter(e=>age(e)<st);
-  const lastTrade=Math.min(...EX.map(age));return{spot,perp,idx,lastTrade,kalOk:kal.win===KS.qs&&!!kal.ticker,bookAge:book.ticker===kal.ticker&&book.t?(nowMs-book.t)/1000:Infinity}}
-function suQuote(H){if(!(H.bookAge<15))return{yb:null,ya:null,nb:null,na:null};return{yb:book.yb,nb:book.nb,ya:book.nb!=null?1-book.nb:null,na:book.yb!=null?1-book.yb:null}}
-function suAlert(ev,txt){suLastAlert={t:Date.now(),txt};beep(ev.dir);
-  if(ntf)try{new Notification('SETUP ALERT · '+ev.label,{body:txt.split('\n').slice(0,4).join('\n')})}catch(_){}}
-function suTick(){
-  if(!KS.qs)return;const nowMs=Date.now(),now=Math.floor(nowMs/1000),H=suHealth(nowMs);
-  // contract roll: reset all settlement-window state
-  if(KS.qs!==suQs){suQs=KS.qs;suGapH=[]}
-  const Sr=suSeries(now),inc=S15.increments(Sr,now,SU_CFG,order.length?order[0]:now),[s1,s2]=S15.slices(Sr,now),bars=suBars(now);
-  const typ30=inc[0].typ,typ1m=inc[1].typ,V=vol(),sigma=V?V.s1m:typ1m;
-  const off=OFFICIAL_INDEX&&OFFICIAL_INDEX(),idx=off&&nowMs-off.t<5000?off.px:KS.bp,idxSrc=off?off.src:'BRTI estimate';
-  const K=KS.K,dist=K&&idx?idx-K:null,left=KS.left,closeS=Math.round(KS.close/1000);
-  if(dist!=null){suGapH.push({t:now,d:dist});while(suGapH.length&&suGapH[0].t<now-60)suGapH.shift()}
-  const prev=suGapH.find(x=>x.t>=now-SU_CFG.gapLook),trend=prev&&prev.t<=now-SU_CFG.gapLook+2?S15.gapTrend(dist,prev.d):null;
-  const ok=H.idx.length>0&&H.spot.length>0&&bars.filter(c=>c.t+60<=now).length>=2*SU_CFG.pivot+1&&!!idx;
-  const I=impact(),ab1=I?absCalc(60,I):null,Q=suQuote(H);
-  const arrow=sigLog[0]?{side:sigLog[0].side,t:Math.floor(sigLog[0].t/1000)}:null;
-  for(const d of [-1,1]){const st=suM[d],from=st.brkT||st.start||now-60,f=span2(Sr,from,now),vn=suVenue(from);
-    const spotAgree=H.spot.filter(e=>(vn[e.id]||0)*d>0).length;
-    const absd=S15.absorbed(Sr,now,d,typ1m,SU_CFG)||!!(ab1&&ab1.z>=0.8&&ab1.abs>=0.7&&Math.sign(ab1.d)===d);
-    const r=S15.step(st,{now,px:idx,candles:bars,arrow,s30:s2,typ30,typ1m,sigma1m:sigma,flow:{spot:f.sn,perp:f.pn,spotAgree},absorbed:absd,close:closeS,ticker:kal.ticker||('est-'+KS.qs),ok},SU_CFG);
-    suM[d]=r.st;
-    for(const ev of r.events){const row=suRow(ev,r.st,inc,s1,s2,Q,K,idx,dist,left,sigma,f,spotAgree,H),txt=row.text;delete row.text;LOG.push(row);
-      if(ev.kind!=='RETEST_PENDING'&&!ev.suppressed&&ok)suAlert(ev,txt)}
-    if(r.events.length){saveLog();renderLog()}}
-  suRender({Sr,now,nowMs,H,inc,s1,s2,bars,typ1m,sigma,idx,idxSrc,off,K,dist,left,closeS,trend,ok,Q});
-  suX={Sr,now,H,inc,K};try{suChart()}catch(err){const g=suG,W=suFig.clientWidth,H=suFig.clientHeight;if(W&&H){g.setTransform(1,0,0,1,0,0);g.fillStyle='#f0434f';g.font='12px Inter,sans-serif';g.fillText('Chart error: '+err.message,8,20)}console.error(err)}{const m=S15.windowMarks(KS.qs,KS.close);mainMarks={K,open:m.open,settle:m.settle}}
-}
-// ---------- Setup chart: price/BRTI estimate/strike + CVD + CVD Δ bars on the Setup15 increment grid ----------
-let suX=null,suLen=60,suHover=null;
-const suCv=$('suCv'),suG=suCv.getContext('2d'),suFig=$('suFig'),suTip=$('suTip');
-function suChart(){const x=suX;if(!x)return;const {Sr,now,H,inc,K}=x,g=suG;
-  const W=suFig.clientWidth,Hh=suFig.clientHeight,dpr=window.devicePixelRatio||1;if(!W||!Hh)return;
-  if(suCv.width!==W*dpr||suCv.height!==Hh*dpr){suCv.width=W*dpr;suCv.height=Hh*dpr}
-  g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,Hh);g.font='11px Inter,sans-serif';
-  const M=S15.windowMarks(KS.qs,KS.close),live=order.length?order[0]:now;
-  // axis ends at now (never the future close) so live CVD fills the plot
-  const D=S15.chartDomain(M.open,M.close,now),x0=D.x0,x1=D.x1;
-  const L=66,R=74,T=8,PH=(Hh-34)*0.42,CT=T+PH+10,CH=(Hh-34)*0.30,BT=CT+CH+10,BH=Hh-34-PH-CH-20;
-  const xs=t=>L+(W-L-R)*((t-x0)/Math.max(x1-x0,1));
-  // series: per-second CVD from x0, rebased to 0 at the window open; price from the trade tape; BRTI estimate per second
-  const Lc=S15.cvdLine(Sr,x0,now),z=Lc[Math.min(Lc.length-1,M.open-x0)]||{net:0,sn:0,pn:0,ix:0};
-  const cl=Lc.map(r=>({t:r.t,px:r.px,net:r.net-z.net,sn:r.sn-z.sn,pn:r.pn-z.pn,ix:r.ix-z.ix,bp:prox.get(r.t)||null}));
-  const buckets=S15.cvdBuckets(Sr,now,suLen,Math.ceil((now-x0)/suLen),live).filter(b=>b.b>x0);
-  const typ=(inc.find(r=>r.len===suLen)||{}).typ;
-  // stale state: same rules the module uses to suppress alerts
-  const stale=!(H.lastTrade<SU_CFG.staleSec)||!H.spot.length,stTxt=`${H.spot.length} spot · ${H.perp.length} perp · ${H.idx.length}/3 index venues fresh · last trade ${isFinite(H.lastTrade)?H.lastTrade.toFixed(1)+'s':'never'} ago`;
-  const st=$('suCvSt');st.textContent=(stale?'STALE · ':'')+stTxt;st.className=stale?'sell':'mute';
-  // ranges
-  let pmn=Infinity,pmx=-Infinity;for(const r of cl){for(const v of [r.px,r.bp])if(v){pmn=Math.min(pmn,v);pmx=Math.max(pmx,v)}}
-  if(K){pmn=Math.min(pmn,K);pmx=Math.max(pmx,K)}
-  if(pmn===Infinity){g.fillStyle='#8592a3';g.fillText('Waiting for trades…',L+10,T+20);return}
-  if(pmx-pmn<10){const m=(pmx+pmn)/2;pmx=m+5;pmn=m-5}{const p=(pmx-pmn)*0.08;pmx+=p;pmn-=p}
-  const yp=v=>T+PH*(1-(v-pmn)/(pmx-pmn));
-  const cvds=[];for(const r of cl)if(r.t>=Math.max(live,x0)&&r.t<=x1)cvds.push(r.net,r.sn,r.pn,r.ix);
-  const cr=S15.robustRange(cvds,{include0:1,minSpan:1}),cmn=cr.mn,cmx=cr.mx;
-  const yc=v=>CT+CH*(1-(Math.max(cmn,Math.min(cmx,v))-cmn)/Math.max(cmx-cmn,1));
-  // shading: pre-open context, settlement window, no-trade-data region
-  g.fillStyle='#ffffff08';g.fillRect(xs(x0),T,xs(M.open)-xs(x0),Hh-34-T);
-  g.fillStyle='#f7931a1c';g.fillRect(xs(M.settle),T,xs(M.close)-xs(M.settle),Hh-34-T);
-  if(live>x0){g.fillStyle='#8592a322';const e=Math.min(xs(live),xs(now));g.fillRect(xs(x0),CT,e-xs(x0),Hh-34-CT)}
-  // grids + axes
-  g.strokeStyle='#1f2733';g.lineWidth=1;g.textBaseline='middle';g.fillStyle='#8592a3';
-  for(let k=0;k<=3;k++){const y=T+PH*k/3;g.beginPath();g.moveTo(L,y);g.lineTo(W-R,y);g.stroke();g.textAlign='left';g.fillText('$'+Math.round(pmx-(pmx-pmn)*k/3).toLocaleString(),W-R+6,y)}
-  for(let k=0;k<=2;k++){const y=CT+CH*k/2;g.beginPath();g.moveTo(L,y);g.lineTo(W-R,y);g.stroke();g.textAlign='right';g.fillText(fmt(cmx-(cmx-cmn)*k/2),L-6,y)}
-  g.setLineDash([3,3]);g.strokeStyle='#3a4655';g.beginPath();g.moveTo(L,yc(0));g.lineTo(W-R,yc(0));g.stroke();g.setLineDash([]);
-  g.textAlign='left';g.fillStyle='#8592a3';g.fillText('CVD since open',L+4,CT+8);g.fillText('Price',L+4,T+8);
-  // vertical marks: open, settlement window, close, now
-  const vline=(t,col,lab,dash,top)=>{const X=xs(t);g.strokeStyle=col;g.setLineDash(dash||[]);g.beginPath();g.moveTo(X,T);g.lineTo(X,Hh-30);g.stroke();g.setLineDash([]);
-    if(lab){g.fillStyle=col;g.textAlign=top?'right':'center';g.textBaseline='top';g.fillText(lab,top?X-3:X,top?T+2:Hh-28)}};
-  const hm=t=>new Date(t*1000).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}).replace(/\s?[AP]M/,'');
-  for(let t=x0;t<=x1;t+=300)if(t!==M.open&&t!==M.close)vline(t,'#1f2733',hm(t));
-  if(M.open>=x0&&M.open<=x1)vline(M.open,'#8592a3','open '+hm(M.open),[4,3]);if(M.settle>=x0&&M.settle<=x1)vline(M.settle,'#f7931a','settlement 60s →',[4,3],1);if(M.close>=x0&&M.close<=x1)vline(M.close,'#8592a3','close '+hm(M.close),[4,3]);vline(now,'#e8edf355','now');if(M.close>x1){g.fillStyle='#8592a3';g.textAlign='right';g.textBaseline='top';g.fillText('close '+hm(M.close)+' · '+mmss(M.close-now)+' left',W-R,Hh-28)}
-  // strike
-  if(K){const y=yp(K);g.strokeStyle='#ffd166';g.lineWidth=1.4;g.setLineDash([6,4]);g.beginPath();g.moveTo(L,y);g.lineTo(W-R,y);g.stroke();g.setLineDash([]);
-    g.fillStyle='#ffd166';g.textAlign='left';g.textBaseline='bottom';g.fillText('Strike $'+K.toLocaleString('en-US',{maximumFractionDigits:2})+' · '+(KS.src||''),L+4,y-2)}
-  const line=(key,yf,col,w,from)=>{g.strokeStyle=col;g.lineWidth=w;g.beginPath();let on=false;for(const r of cl){const v=r[key];if(v==null||r.t<(from||x0)){on=false;continue}const X=xs(r.t),Y=yf(v);on?g.lineTo(X,Y):g.moveTo(X,Y);on=true}g.stroke()};
-  line('px',yp,'#e8edf3aa',1.2);line('bp',yp,'#f7931a',2);
-  line('ix',yc,'#e8edf380',1.1,live);line('sn',yc,'#5aa9ff',1.2,live);line('pn',yc,'#b18cff',1.2,live);line('net',yc,'#18c784',2.2,live);
-  // CVD Δ bars per bucket (same windows as the table) with Δ BTC diamonds on a shared ± scale
-  const mid=BT+BH/2,br=S15.robustRange(buckets.map(b=>b.net),{include0:1,minSpan:1}),bm=Math.max(1,Math.abs(br.mx),Math.abs(br.mn));
-  const dm=Math.max(1,...buckets.map(b=>Math.abs(b.dp||0)));
-  g.strokeStyle='#1f2733';g.beginPath();g.moveTo(L,mid);g.lineTo(W-R,mid);g.stroke();
-  for(const b of buckets){if(b.b<=x0||b.a>=x1)continue;const a=Math.max(b.a,x0),X0=xs(a)+1,X1=xs(Math.min(b.b,x1))-1,w=Math.max(1,X1-X0);
-    const clipped=Math.abs(b.net)>bm*1.01,h=(BH/2-3)*Math.min(1,Math.abs(b.net)/bm);
-    g.fillStyle=b.partial?'#8592a366':b.net>=0?'#18c784':'#f0434f';if(stale&&b.b>now-SU_CFG.staleSec)g.fillStyle='#8592a3';
-    g.fillRect(X0,b.net>=0?mid-h:mid,w,h);
-    if(b.b===now){g.strokeStyle='#e8edf3';g.strokeRect(X0-.5,BT,w+1,BH)}
-    if(b.dp!=null){const X=(X0+X1)/2,Y=mid-(BH/2-3)*b.dp/dm;g.fillStyle=b.dp>=0?'#c9ffe6':'#ffd0d4';g.beginPath();g.moveTo(X,Y-4);g.lineTo(X+4,Y);g.lineTo(X,Y+4);g.lineTo(X-4,Y);g.fill()}
-    if(w>=30&&!b.partial){g.fillStyle='#8592a3';g.textAlign='center';g.textBaseline=b.net>=0?'top':'bottom';
-      const lab=clipped?fmt(b.net):(b.dp!=null?((b.dp>=0?'+':'−')+'$'+Math.abs(b.dp).toFixed(0)):'');if(lab)g.fillText(lab,(X0+X1)/2,b.net>=0?mid+2:mid-2)}}
-  g.fillStyle='#8592a3';g.textAlign='right';g.textBaseline='middle';g.fillText('Δ '+fmt(bm,false)+(cr.clipped||br.clipped?' *':''),L-6,BT+6);g.fillText((suLen<60?suLen+'s':suLen/60+'m')+' bkts',L-6,mid);
-  g.textAlign='left';g.fillText('◆ ±$'+dm.toFixed(0),W-R+6,BT+6);
-  if(cr.clipped||br.clipped){g.fillStyle='#8592a3';g.textAlign='left';g.textBaseline='top';g.fillText('scale clips a spike '+fmt(br.rawLo!=null&&Math.abs(br.rawLo)>Math.abs(br.rawHi||0)?br.rawLo:br.rawHi),L+4,BT+1)}
-  if(stale){g.fillStyle='#f0434f';g.font='600 13px Inter,sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('STALE FEED · '+stTxt,(L+W-R)/2,CT+CH/2);g.font='11px Inter,sans-serif'}
-  // hover
-  if(suHover!=null&&suHover>=L&&suHover<=W-R){const t=Math.round(x0+(suHover-L)/(W-L-R)*(x1-x0)),r=cl[t-x0];g.strokeStyle='#8592a3';g.beginPath();g.moveTo(suHover,T);g.lineTo(suHover,Hh-30);g.stroke();
-    const b=buckets.find(b=>t>b.a&&t<=b.b),lines=[new Date(t*1000).toLocaleTimeString('en-US',{hour12:false})];
-    if(r){lines.push('Price '+pxFmt(r.px)+' · BRTI est '+(r.bp?pxFmt(r.bp):'—'));if(t>=live)lines.push('CVD since open '+fmt(r.net)+' (spot '+fmt(r.sn)+' · perp '+fmt(r.pn)+' · index '+fmt(r.ix)+')');else lines.push('No trade data yet at this second')}
-    if(b){const f=s=>new Date(s*1000).toLocaleTimeString('en-US',{hour12:false});lines.push(`Bucket (${f(b.a)}, ${f(b.b)}]${b.partial?' · partial':''}`);
-      lines.push('Δ BTC '+usd(b.dp)+(typ&&b.dp!=null?' · '+(b.dp/typ>=0?'+':'−')+Math.abs(b.dp/typ).toFixed(2)+'× typical':'')+' · CVD Δ '+fmt(b.net));lines.push('spot '+fmt(b.sn)+' · perp '+fmt(b.pn)+' · index '+fmt(b.ix))}
-    suTip.style.display='block';suTip.textContent='';for(const l of lines){const d=document.createElement('div');d.textContent=l;suTip.appendChild(d)}
-    suTip.style.left=Math.max(4,Math.min(suHover+12,W-suTip.offsetWidth-4))+'px';suTip.style.top='10px'}else suTip.style.display='none';
-}
-suCv.addEventListener('pointermove',e=>{suHover=e.offsetX;suChart()});suCv.addEventListener('pointerleave',()=>{suHover=null;suChart()});
-new ResizeObserver(()=>suChart()).observe(suFig);
-$('suBk').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;[...$('suBk').children].forEach(x=>x.classList.toggle('on',x===b));suLen=+b.dataset.m;suChart()});
-const span2=(Sr,a,b)=>S15.span(Sr,a,b);
-function suText(st,ev,ctx){const {s1,s2,K,idx,dist,left}=ctx,d=st.dir,lv=st.level!=null?usdA(st.level):'—',cls2=S15.classify(s1,s2,st.state==='IDLE'?0:d,SU_CFG);
-  const L=[`${ev?ev.label:S15.label(st)} · ${mmss(left)} left`,
-    `BTC move: ${usd(s1.dp)} → ${usd(s2.dp)} over the last two 30s slices · ${cls2.label}`,
-    `Why: ${suWhy(st,ev)}`,
-    `Strike: ${K?usdA(K,0):'—'} · BRTI estimate: ${usdA(idx,0)} · gap: ${usd(dist)}`,
-    `Invalidation: ${st.level!=null&&st.state!=='IDLE'?`1m close back ${d<0?'above':'below'} ${lv}`:'—'}`];
-  const mm=S15.mismatch(st.state!=='IDLE'?d:0,dist);if(mm)L.push(mm);return L.join('\n')}
-function suWhy(st,ev){const d=st.dir,lv=st.level!=null?usdA(st.level):'(no confirmed swing yet)',sw=d<0?'low':'high';
-  if(ev&&['INVALIDATED','EXPIRED','RETEST_PENDING'].includes(ev.kind))return ev.why;
-  switch(st.state){case'WATCH':return`${st.trigger}; saved swing ${sw} ${lv}, frozen until the setup ends`;
-    case'BREAK':return !st.retested?`broke ${lv} on a 1m close, waiting for a retest (leg ${sw} ${usdA(st.legX)})`:!st.rejected?`broke ${lv}, retesting within ±$${(st.tol||0).toFixed(0)}`:`broke ${lv} and failed the reclaim; needs a fresh ${sw} beyond ${usdA(st.legX)}${st.wait?' · '+st.wait:''}`;
-    case'CONFIRMED':return`broke ${lv}, failed the reclaim, and made a fresh ${sw} · flow ${st.grade}`;
-    case'INVALIDATED':case'EXPIRED':return st.state.toLowerCase();default:return'no setup'}}
-function suRow(ev,st,inc,s1,s2,Q,K,idx,dist,left,sigma,f,spotAgree,H){const d=ev.dir,ask=d>0?Q.ya:Q.na,pB=S15.pBase(dist,sigma,left);
-  const row={type:'setup',action:'SETUP',kind:ev.kind,label:ev.label,side:d>0?'up':'down',dir:d,t:ev.t*1000,ticker:kal.ticker||null,close:KS.close,K,idx,dist,left:Math.round(left),
-    level:st.level??null,legX:st.legX??null,path:ev.kind==='RETEST_PENDING'?'retest_pending':st.retested?'retest':st.state==='BREAK'?'retest_pending':'',trigger:st.trigger||'',grade:st.grade||'',why:ev.why,
-    inc:Object.fromEntries(inc.map(x=>[x.len+'s',{dp:x.dp,rel:x.rel,spot:x.sn,perp:x.pn,cvd:x.net,idx:x.ix}])),slices:[s1.dp,s2.dp],accel:S15.classify(s1,s2,d,SU_CFG).label,
-    flowSpot:f.sn,flowPerp:f.pn,spotAgree,absorbed:!!st.absorbed,suppressed:!!ev.suppressed,yesBid:Q.yb,yesAsk:Q.ya,noBid:Q.nb,noAsk:Q.na,px:ask,size:1,p:null,edge:null,pBase:pB,sigma,
-    stale:{kalshi:!(H.bookAge<15),perp:!H.perp.length},result:null};
-  row.text=suText(st,ev,{s1,s2,K,idx,dist,left});return row}
-function suRender(x){const {Sr,now,H,inc,s1,s2,bars,sigma,idx,K,dist,left,trend,ok,Q}=x;
-  const rank=s=>({CONFIRMED:5,BREAK:4,WATCH:3,INVALIDATED:2,EXPIRED:2,IDLE:0})[s.state];
-  const top=[suM[-1],suM[1]].sort((a,b)=>rank(b)-rank(a)||(b.since||0)-(a.since||0))[0],d=top.dir,act=top.state!=='IDLE';
-  const lbl=act?S15.label(top):'NO SETUP';
-  $('suState').textContent=`${lbl} · ${mmss(left)} left`;$('suState').className='big '+(act&&!['INVALIDATED','EXPIRED'].includes(top.state)?(d<0?'sell':'buy'):'mute');
-  $('suCard').className='card '+(top.state==='CONFIRMED'?(d<0?'s':'b'):'');
-  if(act)$('suTxt').textContent=suText(top,null,{s1,s2,K,idx,dist,left}).split('\n').slice(1).join('\n');
-  else{const btc=inc[1].rel!=null&&Math.abs(inc[1].rel)>=1?Math.sign(inc[1].dp):0,mm=S15.mismatch(btc,dist);
-    $('suTxt').textContent=`BTC move: ${usd(s1.dp)} → ${usd(s2.dp)} over the last two 30s slices · ${S15.classify(s1,s2,0,SU_CFG).label}\nWhy: no setup. Watching for a fresh red/green order-flow arrow, or 30s net flow with a move ≥ ${SU_CFG.watchMove}× typical.\nStrike: ${K?usdA(K,0):'—'} · BRTI estimate: ${usdA(idx,0)} · gap: ${usd(dist)}\nInvalidation: —${mm?'\n'+mm:''}`}
-  $('suTxt').className='';
-  const fl=[];for(const m of [suM[-1],suM[1]])if(m.absorbed)fl.push(`<span class="tag bad">${m.dir<0?'SELLING':'BUYING'} ABSORBED · new ${m.dir<0?'bearish':'bullish'} alerts suppressed</span>`);
-  if(!ok)fl.push('<span class="tag bad">STALE / MISSING DATA · setups frozen, alerts suppressed</span>');
-  if(KS.src!=='Kalshi live')fl.push(`<span class="tag warn">Strike: ${KS.src||'missing'}</span>`);
-  if(!(H.bookAge<15))fl.push('<span class="tag warn">Kalshi quote stale: logged quotes blank</span>');
-  if(!H.perp.length)fl.push('<span class="tag warn">No fresh perp feed</span>');
-  const G=suGate();fl.push(`<span class="tag ${G.enabled?'good':''}">Actionable YES/NO alerts: ${G.enabled?'ON':'OFF (gate)'}</span>`);
-  if(suLastAlert&&Date.now()-suLastAlert.t<120000)fl.push(`<span class="tag warn">Setup alert sent ${new Date(suLastAlert.t).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',second:'2-digit'})}</span>`);
-  $('suFlags').innerHTML=fl.join('');
-  // increments
-  $('suInc').tBodies[0].innerHTML=inc.map(r=>`<tr><td>${r.len<60?r.len+'s':r.len/60+'m'}${r.full?'':' <span class="mute">*</span>'}</td><td class="${cls(r.dp||0)}">${usd(r.dp)}</td><td class="${cls(r.rel||0)}">${r.rel!=null?(r.rel>=0?'+':'−')+Math.abs(r.rel).toFixed(2)+'×':'<span class="mute">building</span>'}</td><td>${r.typ!=null?'$'+r.typ.toFixed(0):'—'}</td><td class="${cls(r.sn)}">${fmt(r.sn)}</td><td class="${cls(r.pn)}">${fmt(r.pn)}</td><td class="${cls(r.net)}"><b>${fmt(r.net)}</b></td><td class="${cls(r.ix)}">${fmt(r.ix||0)}</td><td class="hide-s mute">${r.bn}</td></tr>`).join('');
-  const cl=S15.classify(s1,s2,act?d:0,SU_CFG);
-  $('suSlices').innerHTML=`<b class="${cls(s1.dp||0)}">${usd(s1.dp)}</b> → <b class="${cls(s2.dp||0)}">${usd(s2.dp)}</b> · <b>${cl.label}</b> <span class="mute">· flow ${fmt(s1.net)} → ${fmt(s2.net)}</span>`;
-  const liveSec=order.length?now-order[0]:0,short=liveSec<300;
-  $('suSliceWhy').textContent=`Last two 30s slices${act?' in the setup direction':''}: ${cl.why||'—'}. Meaningful delta ≥ ${fmt(SU_CFG.minDelta,false)} per slice.`+(short?` CVD is from this page’s trades only (${liveSec}s so far); 3m/5m CVD will match 30s until more time has passed. Price before that uses Coinbase 1m candles.`:'');
-  // strike & countdown
-  $('suTk').textContent=(kal.ticker&&kal.win===KS.qs?kal.ticker:'no live Kalshi market')+'';
-  $('suK').textContent=K?usdA(K)+' · '+KS.src:'missing';$('suK').className=KS.src==='Kalshi live'?'':'sell';
-  $('suLeft').textContent=`${Math.max(0,Math.round(left))} s (${mmss(left)})`;
-  $('suIdxL').textContent=x.off?'Official index ('+x.idxSrc+')':'BRTI estimate';
-  $('suIdx').textContent=idx?usdA(idx)+(x.off?'':` · ${H.idx.length}/3 venues fresh`):'missing';$('suIdx').className=H.idx.length?'':'sell';
-  $('suGap').textContent=dist!=null?usd(dist,2)+(dist>=0?' (YES side)':' (NO side)'):'—';$('suGap').className=cls(dist||0);
-  const pv=suGapH.find(g=>g.t>=now-SU_CFG.gapLook);$('suGapT').textContent=trend?`${trend}${pv?` · ${usd(Math.abs(dist)-Math.abs(pv.d),1)} |gap|`:''}`:'—';
-  const sdC=sigma?sigma*Math.sqrt(Math.max(left,1)/60):null;$('suZ').textContent=dist!=null&&sdC?(dist/sdC>=0?'+':'−')+Math.abs(dist/sdC).toFixed(2)+'σ · 1m σ $'+sigma.toFixed(0):'—';
-  const pB=S15.pBase(dist,sigma,left);$('suPB').textContent=pB!=null?(pB*100).toFixed(1)+'%':'—';
-  const cc=v=>v!=null?(v*100).toFixed(1)+'¢':'—';$('suYes').textContent=`${cc(Q.yb)} / ${cc(Q.ya)}`;$('suNo').textContent=`${cc(Q.nb)} / ${cc(Q.na)}`+(H.bookAge<15?` · ${Math.round(H.bookAge)}s old`:' · stale');
-  // final 60 seconds
-  const fin=$('suFin'),w0=x.closeS-60,el=now-w0;
-  if(!K){fin.textContent='Settlement math needs a strike.'}
-  else if(el<0){fin.innerHTML=`Settlement window (final 60s) opens in ${mmss(-el)}. <span class="mute">Rule: YES if the 60‑second BRTI average, rounded to $0.01, is at least the strike (Kalshi strike_type greater_or_equal).</span>`}
-  else if(el>=60){fin.textContent='Window closed · waiting for Kalshi settlement.'}
-  else{const smp=[];for(let k=w0-SU_CFG.maxGap;k<=now;k++){const v=prox.get(k);if(v)smp.push({t:k,px:v})}
-    const obs=el>0?S15.twAvg(smp,w0,now,SU_CFG.maxGap):null,need=S15.requiredAvg(K,obs,el);
-    if(el>0&&obs==null){fin.innerHTML=`<b class="sell">Settlement window: ${el}/60s elapsed, but fresh BRTI‑estimate data does not cover it.</b> Required average not computed.`}
-    else{const dd=idx-need,yes=idx>=need;
-      fin.innerHTML=`Settlement window: <b>${el}/60s</b> elapsed · observed time‑weighted avg <b>${obs!=null?usdA(obs):'—'}</b> (${obs!=null?usd(obs-K,2):'—'} vs strike) · source: ${x.idxSrc}${x.off?'':' (no official BRTI feed in the browser)'}<br>Required average over the last ${60-el}s: <b>${usdA(need)}</b> · ${x.idxSrc} is <b class="${yes?'buy':'sell'}">${usd(dd,2)}</b> from it<br><span class="${yes?'buy':'sell'}">YES needs the remaining average ≥ ${usdA(need)} (at least the strike) · NO needs it below ${usdA(need)}</span>`}}
-  // machines
-  $('suMach').tBodies[0].innerHTML=[suM[-1],suM[1]].map(m=>{const age=m.state==='IDLE'?'—':mmss(now-(m.start||now));
-    return `<tr><td class="${m.dir<0?'sell':'buy'}">${m.dir<0?'DOWN':'UP'}</td><td>${S15.label(m)}${m.stale?' <span class="sell">stale</span>':''}${m.absorbed?' <span class="sell">absorbed</span>':''}</td><td>${m.level!=null&&m.state!=='IDLE'?usdA(m.level):'—'}</td><td>${m.legX!=null&&m.state!=='IDLE'?usdA(m.legX):'—'}</td><td>${m.state==='BREAK'||m.state==='CONFIRMED'?(m.retested?(m.rejected?'held':'touching'):'pending'):'—'}</td><td>${m.state==='IDLE'?'—':(()=>{const f=span2(Sr,m.brkT||m.start,now);return fmt(f.sn)+' / '+fmt(f.pn)})()}</td><td>${m.grade||'—'}</td><td>${age}</td></tr>`}).join('');
-  const hc=(b,t)=>`<span class="${b?'buy':'sell'}">${t}</span>`,done=bars.filter(c=>c.t+60<=now);
-  $('suHealthT').tBodies[0].innerHTML=[
-    ['Last trade (any venue)',hc(H.lastTrade<SU_CFG.staleSec,isFinite(H.lastTrade)?H.lastTrade.toFixed(1)+'s ago':'none')],
-    ['BRTI estimate venues',hc(H.idx.length>0,H.idx.length+'/3 fresh')+(x.off?'':' · official BRTI: not available')],
-    ['Spot venues',hc(H.spot.length>0,H.spot.length+'/4 fresh')],['Perp venues',hc(H.perp.length>0,H.perp.length+'/3 fresh')],
-    ['1m candles',hc(done.length>=2*SU_CFG.pivot+1,done.length+' completed')+` · ${done.filter(c=>c.src==='live').length} live, rest Coinbase`],
-    ['Kalshi market',hc(H.kalOk,H.kalOk?'live':kalErr?'blocked':'waiting')],['Kalshi book',hc(H.bookAge<15,isFinite(H.bookAge)?Math.round(H.bookAge)+'s old':'none')],
-    ['Baselines (30s/1m/3m/5m)',inc.map(r=>r.bn).join(' / ')+' intervals'],['Volatility (1m σ)',sigma?'$'+sigma.toFixed(0)+(vol()?'':' (from 1m baseline)'):hc(false,'learning')]
-  ].map(r=>`<tr><td class="mute">${r[0]}</td><td>${r[1]}</td></tr>`).join('');
-  $('suHead').textContent=`Updated ${new Date(x.nowMs).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',second:'2-digit'})} · ${KS.src==='Kalshi live'?kal.ticker:'strike '+(KS.src||'missing')}`;
-  suRenderLog(G);
-}
-function suGate(){const rows=LOG.filter(r=>r.type==='setup'&&r.kind==='CONFIRMED').map(r=>({t:r.t,dir:r.dir,pBase:r.pBase,result:r.result,ask:r.px}));return S15.evaluateGate(rows,SU_CFG)}
-let suLogSig='';
-function suRenderLog(G){const rows=LOG.filter(r=>r.type==='setup');$('suLogN').textContent=rows.length;
-  $('suGate').innerHTML=`<b>Actionable YES/NO alerts: ${G.enabled?'<span class="buy">ON</span>':'OFF'}</b> · chronological out‑of‑sample test on settled CONFIRMED setups: ${G.nTrain} train / ${G.nTest} test`+(G.brierBase!=null?` · Brier setup ${G.brierSetup.toFixed(4)} vs baseline (strike distance, volatility, time left) ${G.brierBase.toFixed(4)}`:'')+(G.edge!=null?` · est. edge after quote, fee, ${SU_CFG.slip}¢ slippage ${(G.edge*100).toFixed(1)}¢ · realized ${(G.real*100).toFixed(1)}¢`:'')+
-    `<div class="mute" style="margin-top:4px">${G.pass?(SU_CFG.actionable?'Gate passed and switched on.':'Gate passed. Set "actionable" to 1 in research parameters to enable.'):'Blocked: '+G.reasons.join(' · ')}. Until then every alert is a setup alert only.</div>`;
-  const sig=rows.length+':'+rows.filter(r=>r.result).length;if(sig===suLogSig)return;suLogSig=sig;
-  const cc=v=>v!=null?(v*100).toFixed(0)+'¢':'—';
-  $('suLogT').tBodies[0].innerHTML=rows.slice(-40).reverse().map(r=>{const i30=r.inc&&r.inc['30s'],i60=r.inc&&r.inc['60s'];const res=r.result?((r.side==='up')===(r.result==='yes')?'<span class="buy">'+r.result.toUpperCase()+' ✓</span>':'<span class="sell">'+r.result.toUpperCase()+' ✗</span>'):'<span class="mute">pending</span>';
-    return `<tr><td>${new Date(r.t).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',second:'2-digit'})}</td><td class="${r.dir<0?'sell':'buy'}">${r.kind==='RETEST_PENDING'?'retest pending path':r.label}${r.suppressed?' <span class="mute">(suppressed)</span>':''}</td><td>${r.level!=null?usdA(r.level,0):'—'}</td><td>${i30?usd(i30.dp):'—'} · ${i60?usd(i60.dp):'—'}</td><td>${i60?fmt(i60.spot)+' / '+fmt(i60.perp):'—'}</td><td>${mmss(r.left)}</td><td>${usd(r.dist)}</td><td>${cc(r.yesAsk)} / ${cc(r.noAsk)}</td><td>${res}</td></tr>`}).join('')||'<tr><td colspan="9" class="mute">No setups logged yet</td></tr>'}
-function suDl(name,type,body){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([body],{type}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
-const SU_COLS=['t','kind','label','side','path','ticker','K','idx','dist','left','level','legX','trigger','grade','accel','slices','inc','flowSpot','flowPerp','spotAgree','absorbed','suppressed','yesBid','yesAsk','noBid','noAsk','pBase','sigma','stale','why','result','pnl'];
-$('suCsv').addEventListener('click',()=>{const rows=LOG.filter(r=>r.type==='setup'),esc=v=>{v=v==null?'':typeof v==='object'?JSON.stringify(v):String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
-  suDl('btc15-setups.csv','text/csv',[SU_COLS.join(',')].concat(rows.map(x=>SU_COLS.map(k=>esc(k==='t'?new Date(x.t).toISOString():x[k])).join(','))).join('\n'));$('suLogMsg').textContent=rows.length+' rows exported'});
-$('suJson').addEventListener('click',()=>{const rows=LOG.filter(r=>r.type==='setup');suDl('btc15-setups.json','application/json',JSON.stringify(rows,null,1));$('suLogMsg').textContent=rows.length+' rows exported'});
-(function suCfgForm(){const f=$('suCfgF');f.innerHTML=Object.keys(S15.DEF).map(k=>`<label>${k}<input data-k="${k}" inputmode="decimal" value="${SU_CFG[k]}"></label>`).join('');
-  f.addEventListener('change',e=>{const k=e.target.dataset.k,v=parseFloat(e.target.value);if(k&&isFinite(v)&&v>=0)SU_CFG[k]=v;else if(k)e.target.value=SU_CFG[k];try{localStorage.setItem('setupCfg',JSON.stringify(SU_CFG))}catch(_){}});
-  $('suCfgReset').addEventListener('click',()=>{Object.assign(SU_CFG,S15.DEF);try{localStorage.removeItem('setupCfg')}catch(_){}for(const i of f.querySelectorAll('input'))i.value=SU_CFG[i.dataset.k]})})();
-setInterval(()=>{try{suTick()}catch(err){$('suHead').textContent='Setup module error: '+err.message;console.error(err)}},1000);
 // ---------- Audit structure & signals (watch mode) ----------
 const HR=3600e3,DAY=864e5;
 const AU={s1:null,sSrc:'',d1:null,dSrc:'',pf:null,pfSrc:'',oi:null,oiSrc:'',fund:null,fSrc:'',t:0,first:true};
