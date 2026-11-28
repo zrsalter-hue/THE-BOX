@@ -209,6 +209,39 @@ function evaluateGate(rows,cfg){cfg=cfg||DEF;const R=rows.filter(r=>r.result&&r.
   const pass=!reasons.length;
   return{pass,enabled:pass&&!!cfg.actionable,nTrain:tr.length,nTest:te.length,brierBase:bB,brierSetup:bS,edge,real,shift,reasons}}
 
-const api={DEF,median,pxAt,span,baseline,increments,cvdBuckets,cvdLine,windowMarks,slices,classify,swing,absorbed,fresh,step,label,twAvg,requiredAvg,settleSide,round2,gapTrend,direction,mismatch,pBase,evaluateGate,Phi};
+
+/* ---------- chart helpers (pure; used by the page charts) ----------
+   chartDomain: x-axis for the setup chart. Ends at `now` — never at the future
+   window close — so live CVD/price fill the plot instead of sitting in a sliver.
+   Includes a short pre-open context and a minimum span so a fresh page (tens of
+   seconds of trades) is still readable. */
+function chartDomain(open,close,now,cfg){cfg=cfg||{};
+  const pre=cfg.pre??180,minSpan=cfg.minSpan??240,maxPre=cfg.maxPre??300;
+  const x1=now; let x0=open-pre;
+  if(now-x0<minSpan)x0=now-minSpan;
+  if(open!=null&&x0<open-maxPre)x0=open-maxPre;
+  if(x0>now-60)x0=now-60;
+  return{x0,x1}}
+// parse a trade timestamp (ms, unix seconds, or ISO string) to ms; 0 if missing/bad
+function toMs(v){if(v==null||v==='')return 0;if(typeof v==='string'&&/[T-]/.test(v)&&isNaN(v)){const t=Date.parse(v);return t>0?t:0}
+  const n=+v;if(!isFinite(n)||n<=0)return 0;return n<1e12?Math.round(n*1000):n}
+// unix second to bucket a trade into. Missing ts → now. Rejects >2s in the future or older than keepS (default 4h).
+function tradeSecond(ts,nowMs,keepS){nowMs=nowMs||Date.now();const t=toMs(ts)||nowMs;
+  if(t>nowMs+2000)return null;const keep=(keepS==null?4*3600+60:keepS)*1000;if(keep>=0&&nowMs-t>keep)return null;
+  return Math.floor(t/1000)}
+/* robustRange: axis limits that a single spike cannot dominate.
+   include0: expand to include 0 (CVD). spike: a point more than this × the
+   5–95% span beyond that span is clipped (flagged), not used as the axis max. */
+function robustRange(vals,cfg){cfg=cfg||{};const v=(vals||[]).filter(x=>x!=null&&isFinite(x));
+  if(!v.length)return{mn:-1,mx:1,clipped:false,rawLo:null,rawHi:null};
+  const s=[...v].sort((a,b)=>a-b),n=s.length,q=p=>s[Math.min(n-1,Math.max(0,Math.round((n-1)*p)))];
+  let lo=q(0.05),hi=q(0.95);if(cfg.include0){lo=Math.min(lo,0);hi=Math.max(hi,0)}
+  const rawLo=s[0],rawHi=s[n-1],span=Math.max(hi-lo,cfg.minSpan||1),k=cfg.spike||4;let clipped=false;
+  if(rawLo>=lo-k*span)lo=Math.min(lo,rawLo);else clipped=true;
+  if(rawHi<=hi+k*span)hi=Math.max(hi,rawHi);else clipped=true;
+  if(hi-lo<(cfg.minSpan||1)){const m=(hi+lo)/2,h=(cfg.minSpan||1)/2;lo=m-h;hi=m+h}
+  const pad=(cfg.pad??0.08)*(hi-lo);return{mn:lo-pad,mx:hi+pad,clipped,rawLo,rawHi}}
+
+const api={DEF,median,pxAt,span,baseline,increments,cvdBuckets,cvdLine,windowMarks,chartDomain,toMs,tradeSecond,robustRange,slices,classify,swing,absorbed,fresh,step,label,twAvg,requiredAvg,settleSide,round2,gapTrend,direction,mismatch,pBase,evaluateGate,Phi};
 if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.Setup15=api;
 })(typeof window!=='undefined'?window:globalThis);

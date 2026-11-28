@@ -192,7 +192,7 @@ details{margin-top:12px}summary{cursor:pointer;color:var(--mute);font-size:14px;
     <div class="seg" id="cwin"><button data-m="5">5m</button><button data-m="15" class="on">15m</button><button data-m="60">1h</button><button data-m="240">4h</button></div>
   </div>
   <div class="fig" id="fig"><canvas id="cv"></canvas><div id="tip"></div></div>
-  <div class="legend" style="margin-top:8px"><span style="--c:var(--btc)">CVD all venues</span><span style="--c:var(--spot)">Spot CVD</span><span style="--c:var(--perp)">Perp CVD</span><span style="--c:#8592a3">Price (right axis)</span><span>Bars: CVD Δ per bucket on the setup increment grid (30s for 5m/15m, 1m for 1h, 5m for 4h; buckets end at now) · dashed gold = strike · CVD rebased to 0 at left edge</span></div>
+  <div class="legend" style="margin-top:8px"><span style="--c:var(--btc)">CVD all venues</span><span style="--c:var(--spot)">Spot CVD</span><span style="--c:var(--perp)">Perp CVD</span><span style="--c:#8592a3">Price (right axis)</span><span>Bars: CVD Δ per bucket on the setup increment grid (30s for 5m/15m, 1m for 1h, 5m for 4h; buckets end at now) · dashed gold = strike · CVD rebased to 0 at left edge · axis scale ignores a single spike</span></div>
 </section>
 
 <section class="card" id="edgeCard">
@@ -397,7 +397,7 @@ details{margin-top:12px}summary{cursor:pointer;color:var(--mute);font-size:14px;
 <p class="note">How it works: every trade from each venue is tagged by the aggressor (taker) side. CVD = running sum of taker buy $ − taker sell $. Buyer share = taker buy $ ÷ total taker $. Any venue that blocks your region simply shows red and is left out of the totals.</p>
 </div>
 
-<script src="setup15.js"></script>
+<script src="setup15.js?v=4"></script>
 <script>
 {
 const $=id=>document.getElementById(id);
@@ -405,15 +405,15 @@ const fmt=(v,sign=true)=>{const a=Math.abs(v),s=v<0?'−':(v>0&&sign?'+':'');ret
 const cls=v=>v>0?'buy':v<0?'sell':'';
 const setNum=(el,v,sign=true)=>{el.textContent=fmt(v,sign);el.className=el.className.replace(/\b(buy|sell)\b/g,'').trim()+' '+cls(v)};
 const pxFmt=p=>p?'$'+p.toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1}):'—';
-const binParse=m=>m.e==='aggTrade'?[[+m.p,+m.q,!m.m]]:null;
+const binParse=m=>m.e==='aggTrade'?[[+m.p,+m.q,!m.m,m.T]]:null;
 const EX=[
- {id:'binf',rest:{u:()=>'https://fapi.binance.com/fapi/v1/aggTrades?symbol=BTCUSDT&limit=100',rows:j=>Array.isArray(j)?j.map(t=>[t.a,+t.p,+t.q,!t.m]):[]},name:'Binance perp',type:'perp',url:'wss://fstream.binance.com/ws/btcusdt@aggTrade',parse:binParse},
- {id:'byb',rest:{u:()=>'https://api.bybit.com/v5/market/recent-trade?category=linear&symbol=BTCUSDT&limit=100',rows:j=>((j.result||{}).list||[]).map(t=>[t.execId,+t.price,+t.size,t.side==='Buy'])},name:'Bybit perp',type:'perp',url:'wss://stream.bybit.com/v5/public/linear',sub:{op:'subscribe',args:['publicTrade.BTCUSDT']},ping:{op:'ping'},parse:m=>m.topic&&Array.isArray(m.data)?m.data.map(t=>[+t.p,+t.v,t.S==='Buy']):null},
- {id:'okx',rest:{u:()=>'https://www.okx.com/api/v5/market/trades?instId=BTC-USDT-SWAP&limit=100',rows:j=>(j.data||[]).map(t=>[t.tradeId,+t.px,+t.sz*0.01,t.side==='buy'])},name:'OKX perp',type:'perp',url:'wss://ws.okx.com:8443/ws/v5/public',sub:{op:'subscribe',args:[{channel:'trades',instId:'BTC-USDT-SWAP'}]},ping:'ping',parse:m=>m.arg&&Array.isArray(m.data)?m.data.map(t=>[+t.px,+t.sz*0.01,t.side==='buy']):null},
- {id:'bins',rest:{u:()=>'https://api.binance.com/api/v3/aggTrades?symbol=BTCUSDT&limit=100',rows:j=>Array.isArray(j)?j.map(t=>[t.a,+t.p,+t.q,!t.m]):[]},name:'Binance spot',type:'spot',url:'wss://stream.binance.com:9443/ws/btcusdt@aggTrade',parse:binParse},
- {id:'cb',rest:{u:()=>'https://api.exchange.coinbase.com/products/BTC-USD/trades?limit=100',rows:j=>Array.isArray(j)?j.map(t=>[t.trade_id,+t.price,+t.size,t.side==='sell']):[]},name:'Coinbase spot',type:'spot',us:1,url:'wss://ws-feed.exchange.coinbase.com',sub:{type:'subscribe',product_ids:['BTC-USD'],channels:['matches']},parse:m=>m.type==='match'?[[+m.price,+m.size,m.side==='sell']]:null},
- {id:'bst',rest:{u:()=>'https://www.bitstamp.net/api/v2/transactions/btcusd/?time=minute',rows:j=>Array.isArray(j)?j.map(t=>[t.tid,+t.price,+t.amount,String(t.type)==='0']):[]},name:'Bitstamp spot',type:'spot',us:1,url:'wss://ws.bitstamp.net',sub:{event:'bts:subscribe',data:{channel:'live_trades_btcusd'}},parse:m=>m.event==='trade'&&m.data?[[+m.data.price,+m.data.amount,m.data.type===0]]:null},
- {id:'krk',rest:{u:e=>'https://api.kraken.com/0/public/Trades?pair=XBTUSD'+(e.since?'&since='+e.since:''),rows:(j,e)=>{const r=j.result||{};if(r.last)e.since=r.last;const k=Object.keys(r).find(x=>x!=='last');return k?r[k].map(t=>[t[2]+':'+t[0]+':'+t[1],+t[0],+t[1],t[3]==='b']):[]}},name:'Kraken spot',type:'spot',us:1,url:'wss://ws.kraken.com/v2',sub:{method:'subscribe',params:{channel:'trade',symbol:['BTC/USD']}},ping:{method:'ping'},parse:m=>m.channel==='trade'&&m.type==='update'?m.data.map(t=>[+t.price,+t.qty,t.side==='buy']):null},
+ {id:'binf',rest:{u:()=>'https://fapi.binance.com/fapi/v1/aggTrades?symbol=BTCUSDT&limit=100',rows:j=>Array.isArray(j)?j.map(t=>[t.a,+t.p,+t.q,!t.m,t.T]):[]},name:'Binance perp',type:'perp',url:'wss://fstream.binance.com/ws/btcusdt@aggTrade',parse:binParse},
+ {id:'byb',rest:{u:()=>'https://api.bybit.com/v5/market/recent-trade?category=linear&symbol=BTCUSDT&limit=100',rows:j=>((j.result||{}).list||[]).map(t=>[t.execId,+t.price,+t.size,t.side==='Buy',t.time])},name:'Bybit perp',type:'perp',url:'wss://stream.bybit.com/v5/public/linear',sub:{op:'subscribe',args:['publicTrade.BTCUSDT']},ping:{op:'ping'},parse:m=>m.topic&&Array.isArray(m.data)?m.data.map(t=>[+t.p,+t.v,t.S==='Buy',t.T]):null},
+ {id:'okx',rest:{u:()=>'https://www.okx.com/api/v5/market/trades?instId=BTC-USDT-SWAP&limit=100',rows:j=>(j.data||[]).map(t=>[t.tradeId,+t.px,+t.sz*0.01,t.side==='buy',+t.ts])},name:'OKX perp',type:'perp',url:'wss://ws.okx.com:8443/ws/v5/public',sub:{op:'subscribe',args:[{channel:'trades',instId:'BTC-USDT-SWAP'}]},ping:'ping',parse:m=>m.arg&&Array.isArray(m.data)?m.data.map(t=>[+t.px,+t.sz*0.01,t.side==='buy',+t.ts]):null},
+ {id:'bins',rest:{u:()=>'https://api.binance.com/api/v3/aggTrades?symbol=BTCUSDT&limit=100',rows:j=>Array.isArray(j)?j.map(t=>[t.a,+t.p,+t.q,!t.m,t.T]):[]},name:'Binance spot',fallback:{name:'Binance.US spot',url:'wss://stream.binance.us:9443/ws/btcusd@aggTrade',rest:{u:()=>'https://api.binance.us/api/v3/aggTrades?symbol=BTCUSD&limit=100',rows:j=>Array.isArray(j)?j.map(t=>[t.a,+t.p,+t.q,!t.m,t.T]):[]}},type:'spot',url:'wss://stream.binance.com:9443/ws/btcusdt@aggTrade',parse:binParse},
+ {id:'cb',rest:{u:()=>'https://api.exchange.coinbase.com/products/BTC-USD/trades?limit=100',rows:j=>Array.isArray(j)?j.map(t=>[t.trade_id,+t.price,+t.size,t.side==='sell',t.time]):[]},name:'Coinbase spot',type:'spot',us:1,url:'wss://ws-feed.exchange.coinbase.com',sub:{type:'subscribe',product_ids:['BTC-USD'],channels:['matches']},parse:m=>m.type==='match'?[[+m.price,+m.size,m.side==='sell',m.time]]:null},
+ {id:'bst',rest:{u:()=>'https://www.bitstamp.net/api/v2/transactions/btcusd/?time=minute',rows:j=>Array.isArray(j)?j.map(t=>[t.tid,+t.price,+t.amount,String(t.type)==='0',t.date]):[]},name:'Bitstamp spot',type:'spot',us:1,url:'wss://ws.bitstamp.net',sub:{event:'bts:subscribe',data:{channel:'live_trades_btcusd'}},parse:m=>m.event==='trade'&&m.data?[[+m.data.price,+m.data.amount,m.data.type==0,m.data.timestamp||m.data.date]]:null},
+ {id:'krk',rest:{u:e=>'https://api.kraken.com/0/public/Trades?pair=XBTUSD'+(e.since?'&since='+e.since:''),rows:(j,e)=>{const r=j.result||{};if(r.last)e.since=r.last;const k=Object.keys(r).find(x=>x!=='last');return k?r[k].map(t=>[t[2]+':'+t[0]+':'+t[1],+t[0],+t[1],t[3]==='b',t[2]]):[]}},name:'Kraken spot',type:'spot',us:1,url:'wss://ws.kraken.com/v2',sub:{method:'subscribe',params:{channel:'trade',symbol:['BTC/USD']}},ping:{method:'ping'},parse:m=>m.channel==='trade'&&m.type==='update'?m.data.map(t=>[+t.price,+t.qty,t.side==='buy',t.timestamp||t.time]):null},
 ];
 const PX_PRI=['cb','binf','byb','okx','bins','bst','krk'];
 const B=new Map(),order=[];const KEEP=4*3600+60;
@@ -423,34 +423,58 @@ function chips(){$('chips').innerHTML=EX.map(e=>`<span class="chip ${e.status||'
 function connect(e){
   e.status='connecting';chips();
   let ws;try{ws=new WebSocket(e.url)}catch(err){e.status='down';chips();return retry(e)}
-  e.ws=ws;
-  ws.onopen=()=>{e.delay=2000;if(e.sub)ws.send(JSON.stringify(e.sub));if(e.ping)e.pt=setInterval(()=>{try{ws.send(typeof e.ping==='string'?e.ping:JSON.stringify(e.ping))}catch(_){}} ,20000)};
-  ws.onmessage=ev=>{let m;try{m=JSON.parse(ev.data)}catch(_){return}const r=e.parse(m);if(!r)return;
-    if(e.status!=='live'){e.status='live';chips()}e.last=Date.now();
-    for(const [p,q,isBuy] of r){if(p>0&&q>0)add(e,p,q,isBuy)}};
-  ws.onclose=()=>{clearInterval(e.pt);if(!e.last)e.fails=(e.fails||0)+1;e.status='down';chips();retry(e)};
+  attachWs(e,ws);
+  ws.onopen=()=>{e.delay=2000;if(e.sub)ws.send(JSON.stringify(e.sub))};
   clearTimeout(e.wt);e.wt=setTimeout(()=>{if(!e.last&&!e.polling){e.fails=9;try{ws.close()}catch(_){}}},8000);
-  ws.onerror=()=>{try{ws.close()}catch(_){}};
 }
-function retry(e){if(e.polling)return;if(e.fails>=2&&e.rest){startPoll(e);return}e.delay=Math.min((e.delay||2000)*1.6,30000);setTimeout(()=>connect(e),e.delay)}
-function startPoll(e){e.polling=true;e.name=e.name.replace(/ ·.*/,'')+' · polling';e.status='connecting';chips();e.seen=new Set();let first=true;
-  const go=async()=>{try{const r=await fetch(e.rest.u(e),{cache:'no-store'});if(!r.ok)throw 0;const j=await r.json();const rows=e.rest.rows(j,e);
+function useFallback(e){if(!e.fallback||e.usingFb)return false;e.usingFb=true;
+  e.url=e.fallback.url;if(e.fallback.rest)e.rest=e.fallback.rest;if(e.fallback.sub)e.sub=e.fallback.sub;if(e.fallback.parse)e.parse=e.fallback.parse;
+  e.name=e.fallback.name||e.name.replace(/ ·.*/,'');e.fails=0;e.delay=2000;e.last=0;return true}
+function retry(e){if(e.polling||e.probing)return;
+  if(!e.last&&e.fails>=2&&useFallback(e)){setTimeout(()=>connect(e),400);return}
+  if(e.fails>=2&&e.rest){startPoll(e);return}
+  e.delay=Math.min((e.delay||2000)*1.6,30000);setTimeout(()=>connect(e),e.delay)}
+function startPoll(e){if(e.polling)return;e.polling=true;e.name=e.name.replace(/ ·.*/,'')+' · polling';e.status='connecting';chips();e.seen=new Set();let first=true;
+  const go=async()=>{if(!e.polling)return;try{const r=await fetch(e.rest.u(e),{cache:'no-store'});if(!r.ok)throw 0;const j=await r.json();const rows=e.rest.rows(j,e);
       const fresh=rows.filter(x=>!e.seen.has(String(x[0])));rows.forEach(x=>e.seen.add(String(x[0])));
       if(e.seen.size>5000)e.seen=new Set(rows.map(x=>String(x[0])));
       if(rows.length){if(e.status!=='live'){e.status='live';chips()}e.last=Date.now();
         if(first&&rows[0])e.px=rows[0][1];
-        if(!first)for(const [,p,q,b] of fresh.reverse())if(p>0&&q>0)add(e,p,q,b)}
-      first=false}
-    catch(_){if(e.status!=='down'){e.status='down';chips()}}
-    setTimeout(go,e.status==='live'?1000:5000)};go()}
-// watchdog: a socket that goes silent for 60s gets recycled
-setInterval(()=>{for(const e of EX)if(!e.polling&&e.status==='live'&&Date.now()-e.last>60000){try{e.ws.close()}catch(_){}}},15000);
+        // first batch is applied only when rows have timestamps, so history lands in the right second instead of now
+        const batch=first?rows:fresh;for(const rec of batch.slice().reverse()){const p=rec[1],q=rec[2],b=rec[3],ts=rec[4];if(p>0&&q>0&&(!first||ts))add(e,p,q,b,ts)}}
+      first=false
+    }catch(_){if(e.status!=='down'){e.status='down';chips()}}
+    if(e.polling)setTimeout(go,e.status==='live'?1000:5000)};go()}
+function attachWs(e,ws){e.ws=ws;
+  if(e.ping){clearInterval(e.pt);e.pt=setInterval(()=>{try{ws.send(typeof e.ping==='string'?e.ping:JSON.stringify(e.ping))}catch(_){}},20000)}
+  ws.onmessage=ev=>{let m;try{m=JSON.parse(ev.data)}catch(_){return}const r=e.parse(m);if(!r)return;
+    if(e.status!=='live'){e.status='live';chips()}e.last=Date.now();
+    for(const [p,q,isBuy,ts] of r){if(p>0&&q>0)add(e,p,q,isBuy,ts)}};
+  ws.onclose=()=>{clearInterval(e.pt);if(e.ws!==ws)return;if(!e.last)e.fails=(e.fails||0)+1;e.status='down';chips();retry(e)};
+  ws.onerror=()=>{try{ws.close()}catch(_){}}}
+function probeWs(e){if(e.probing||!e.url)return;e.probing=true;let ws;try{ws=new WebSocket(e.url)}catch(_){e.probing=false;return}
+  const t=setTimeout(()=>{e.probing=false;try{ws.close()}catch(_){}},8000);
+  ws.onopen=()=>{if(e.sub)try{ws.send(JSON.stringify(e.sub))}catch(_){}};
+  ws.onmessage=ev=>{let m;try{m=JSON.parse(ev.data)}catch(_){return}const r=e.parse(m);if(!r||!r.length)return;
+    clearTimeout(t);e.polling=false;e.name=e.name.replace(/ · polling/,'');e.fails=0;e.delay=2000;e.status='live';e.last=Date.now();chips();
+    e.probing=false;attachWs(e,ws);
+    for(const [p,q,isBuy,ts] of r){if(p>0&&q>0)add(e,p,q,isBuy,ts)}};
+  ws.onerror=()=>{};ws.onclose=()=>{clearTimeout(t);if(e.probing)e.probing=false}}
+// watchdog: recycle a silent live socket, restart a dead poller, and periodically try to upgrade polling back to WS
+setInterval(()=>{const now=Date.now();
+  for(const e of EX){const age=e.last?now-e.last:Infinity;
+    if(!e.polling&&e.status==='live'&&age>20000){try{e.ws&&e.ws.close()}catch(_){}}
+    if(e.polling){if(age>45000&&e.status!=='down'){e.status='down';chips()}
+      if(!e.nextWs||now>=e.nextWs){e.nextWs=now+60000;probeWs(e)}}}
+},5000);
 
-function add(e,p,q,isBuy){
-  const usd=p*q,s=Math.floor(Date.now()/1000);
+function add(e,p,q,isBuy,ts){
+  const usd=p*q,s=window.Setup15.tradeSecond(ts,Date.now(),KEEP);
+  if(s==null)return;
   let b=B.get(s);
-  if(!b){b={t:s,b:0,s:0,sb:0,ss:0,pb:0,ps:0,px:price||p,ex:{}};B.set(s,b);order.push(s);
-    while(order.length&&order[0]<s-KEEP)B.delete(order.shift())}
+  if(!b){b={t:s,b:0,s:0,sb:0,ss:0,pb:0,ps:0,px:price||p,ex:{}};B.set(s,b);
+    let lo=0,hi=order.length;while(lo<hi){const m=(lo+hi)>>1;if(order[m]<s)lo=m+1;else hi=m}order.splice(lo,0,s);
+    const cut=Math.floor(Date.now()/1000)-KEEP;while(order.length&&order[0]<cut)B.delete(order.shift())}
   const k=e.type==='spot'?'s':'p';
   if(isBuy){b.b+=usd;b[k+'b']+=usd}else{b.s+=usd;b[k+'s']+=usd}
   const x=b.ex[e.id]||(b.ex[e.id]=[0,0]);x[isBuy?0:1]+=usd;if(e.us){if(isBuy)b.ub=(b.ub||0)+usd;else b.us=(b.us||0)+usd}
@@ -525,17 +549,17 @@ function build(){
   const end=nowS(),start=Math.max(end-cwin*60+1,order.length?order[0]:end);series=[];let c=0,sp=0,pp=0,lastPx=0;
   for(let t=start;t<=end;t++){const b=B.get(t);if(b){c+=b.b-b.s;sp+=b.sb-b.ss;pp+=b.pb-b.ps;lastPx=b.px}series.push({t,c,sp,pp,px:lastPx||null,d:b?b.b-b.s:0,dsn:b?b.sb-b.ss:0,dpn:b?b.pb-b.ps:0,has:!!b})}
 }
-function draw(){
+function draw(){try{
   const W=fig.clientWidth,H=fig.clientHeight,dpr=window.devicePixelRatio||1;
   if(cv.width!==W*dpr||cv.height!==H*dpr){cv.width=W*dpr;cv.height=H*dpr}
   ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
   const L=W<520?60:66,R=W<520?52:70,T=10,LH=(H-30)*0.72,BT=T+LH+12,BH=H-30-LH-12,N=series.length;
   ctx.font='11px Inter,sans-serif';ctx.fillStyle='#8592a3';
   const xs=i=>L+(W-L-R)*i/Math.max(N-1,1);
-  let mn=0,mx=0,pmn=Infinity,pmx=-Infinity;
-  for(const s of series){mn=Math.min(mn,s.c,s.sp,s.pp);mx=Math.max(mx,s.c,s.sp,s.pp);if(s.px){pmn=Math.min(pmn,s.px);pmx=Math.max(pmx,s.px)}}
-  if(mx-mn<1){mx+=1;mn-=1}const pad=(mx-mn)*0.08;mx+=pad;mn-=pad;
-  const ys=v=>T+LH*(1-(v-mn)/(mx-mn));
+  let pmn=Infinity,pmx=-Infinity;const cvals=[];
+  for(const s of series){cvals.push(s.c,s.sp,s.pp);if(s.px){pmn=Math.min(pmn,s.px);pmx=Math.max(pmx,s.px)}}
+  const rr=window.Setup15.robustRange(cvals,{include0:1,minSpan:1}),mn=rr.mn,mx=rr.mx;
+  const ys=v=>T+LH*(1-(Math.max(mn,Math.min(mx,v))-mn)/Math.max(mx-mn,1));
   if(pmn===Infinity){ctx.fillText('Waiting for trades…',L+10,T+20);return}
   if(pmx-pmn<1){pmx+=5;pmn-=5}const ppad=(pmx-pmn)*0.08;pmx+=ppad;pmn-=ppad;
   const yp=v=>T+LH*(1-(v-pmn)/(pmx-pmn));
@@ -556,10 +580,11 @@ function draw(){
   const t0=series[0].t,tN=series[N-1].t,bl=cwin<=15?30:cwin<=60?60:300,S15m=window.Setup15;
   const rows=series.filter(s=>s.has).map(s=>({t:s.t,px:s.px,sn:s.dsn,pn:s.dpn}));
   const bk=S15m.cvdBuckets(rows,tN,bl,Math.ceil(N/bl),order.length?order[0]:tN).filter(b=>b.b>t0);
-  const bm=Math.max(1,...bk.map(b=>Math.abs(b.net))),mid=BT+BH/2,xt=t=>xs(Math.max(0,t-t0));
+  const brr=S15m.robustRange(bk.map(b=>b.net),{include0:1,minSpan:1}),bm=Math.max(1,Math.abs(brr.mx),Math.abs(brr.mn)),mid=BT+BH/2,xt=t=>xs(Math.max(0,t-t0));
   ctx.strokeStyle='#1f2733';ctx.beginPath();ctx.moveTo(L,mid);ctx.lineTo(W-R,mid);ctx.stroke();
-  for(const b of bk){const h=(BH/2-2)*Math.abs(b.net)/bm,X0=xt(Math.max(b.a,t0-1)+1),w=Math.max(1,xt(b.b)-X0-1);ctx.fillStyle=b.partial?'#8592a366':b.net>=0?'#18c784':'#f0434f';ctx.fillRect(X0,b.net>=0?mid-h:mid,w,h)}
-  ctx.textAlign='right';ctx.textBaseline='middle';ctx.fillStyle='#8592a3';ctx.fillText('Δ '+fmt(bm,false),L-6,BT+6);ctx.fillText((bl<60?bl+'s':bl/60+'m')+' bkts',L-6,mid);
+  for(const b of bk){const h=(BH/2-2)*Math.min(1,Math.abs(b.net)/bm),X0=xt(Math.max(b.a,t0-1)+1),w=Math.max(1,xt(b.b)-X0-1);ctx.fillStyle=b.partial?'#8592a366':b.net>=0?'#18c784':'#f0434f';ctx.fillRect(X0,b.net>=0?mid-h:mid,w,h);
+    if(Math.abs(b.net)>bm*1.01&&w>=24){ctx.fillStyle='#8592a3';ctx.textAlign='center';ctx.textBaseline=b.net>=0?'bottom':'top';ctx.fillText(fmt(b.net),X0+w/2,b.net>=0?mid-h-1:mid+h+1)}}
+  ctx.textAlign='right';ctx.textBaseline='middle';ctx.fillStyle='#8592a3';ctx.fillText('Δ '+fmt(bm,false)+(brr.clipped?' *':''),L-6,BT+6);ctx.fillText((bl<60?bl+'s':bl/60+'m')+' bkts',L-6,mid);
   // 15-minute market window and strike
   if(mainMarks){const m=mainMarks,vl=(t,col,lab)=>{if(t<t0||t>tN)return;const X=xt(t);ctx.strokeStyle=col;ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(X,T);ctx.lineTo(X,H-22);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle=col;ctx.textAlign='left';ctx.textBaseline='top';ctx.fillText(lab,X+3,T+2)};
     vl(m.open,'#8592a3','15m open');vl(m.settle,'#f7931a','settle 60s');
@@ -573,7 +598,7 @@ function draw(){
     tip.style.display='block';tip.textContent='';
     [[new Date(s.t*1000).toLocaleTimeString('en-US',{hour12:false}),''],['CVD '+fmt(s.c),cls(s.c)],['Spot '+fmt(s.sp)+' · Perp '+fmt(s.pp),''],['Price '+pxFmt(s.px),'']].forEach(([t,c])=>{const d=document.createElement('div');d.textContent=t;d.className=c;tip.appendChild(d)});
     tip.style.left=Math.min(x+12,W-tip.offsetWidth-4)+'px';tip.style.top='12px'}}else tip.style.display='none';
-}
+}catch(err){try{ctx.fillStyle='#f0434f';ctx.font='12px Inter,sans-serif';ctx.fillText('Chart error: '+err.message,8,20)}catch(_){}console.error(err)}}
 cv.addEventListener('pointermove',e=>{hoverX=e.offsetX;draw()});cv.addEventListener('pointerleave',()=>{hoverX=null;draw()});
 const ro=new ResizeObserver(()=>draw());ro.observe(fig);
 
@@ -976,7 +1001,7 @@ function suTick(){
       if(ev.kind!=='RETEST_PENDING'&&!ev.suppressed&&ok)suAlert(ev,txt)}
     if(r.events.length){saveLog();renderLog()}}
   suRender({Sr,now,nowMs,H,inc,s1,s2,bars,typ1m,sigma,idx,idxSrc,off,K,dist,left,closeS,trend,ok,Q});
-  suX={Sr,now,H,inc,K};suChart();{const m=S15.windowMarks(KS.qs,KS.close);mainMarks={K,open:m.open,settle:m.settle}}
+  suX={Sr,now,H,inc,K};try{suChart()}catch(err){const g=suG,W=suFig.clientWidth,H=suFig.clientHeight;if(W&&H){g.setTransform(1,0,0,1,0,0);g.fillStyle='#f0434f';g.font='12px Inter,sans-serif';g.fillText('Chart error: '+err.message,8,20)}console.error(err)}{const m=S15.windowMarks(KS.qs,KS.close);mainMarks={K,open:m.open,settle:m.settle}}
 }
 // ---------- Setup chart: price/BRTI estimate/strike + CVD + CVD Δ bars on the Setup15 increment grid ----------
 let suX=null,suLen=60,suHover=null;
@@ -985,9 +1010,11 @@ function suChart(){const x=suX;if(!x)return;const {Sr,now,H,inc,K}=x,g=suG;
   const W=suFig.clientWidth,Hh=suFig.clientHeight,dpr=window.devicePixelRatio||1;if(!W||!Hh)return;
   if(suCv.width!==W*dpr||suCv.height!==Hh*dpr){suCv.width=W*dpr;suCv.height=Hh*dpr}
   g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,Hh);g.font='11px Inter,sans-serif';
-  const M=S15.windowMarks(KS.qs,KS.close),x0=M.open-300,x1=M.close,live=order.length?order[0]:now;
+  const M=S15.windowMarks(KS.qs,KS.close),live=order.length?order[0]:now;
+  // axis ends at now (never the future close) so live CVD fills the plot
+  const D=S15.chartDomain(M.open,M.close,now),x0=D.x0,x1=D.x1;
   const L=66,R=74,T=8,PH=(Hh-34)*0.42,CT=T+PH+10,CH=(Hh-34)*0.30,BT=CT+CH+10,BH=Hh-34-PH-CH-20;
-  const xs=t=>L+(W-L-R)*(t-x0)/(x1-x0);
+  const xs=t=>L+(W-L-R)*((t-x0)/Math.max(x1-x0,1));
   // series: per-second CVD from x0, rebased to 0 at the window open; price from the trade tape; BRTI estimate per second
   const Lc=S15.cvdLine(Sr,x0,now),z=Lc[Math.min(Lc.length-1,M.open-x0)]||{net:0,sn:0,pn:0,ix:0};
   const cl=Lc.map(r=>({t:r.t,px:r.px,net:r.net-z.net,sn:r.sn-z.sn,pn:r.pn-z.pn,ix:r.ix-z.ix,bp:prox.get(r.t)||null}));
@@ -1002,9 +1029,9 @@ function suChart(){const x=suX;if(!x)return;const {Sr,now,H,inc,K}=x,g=suG;
   if(pmn===Infinity){g.fillStyle='#8592a3';g.fillText('Waiting for trades…',L+10,T+20);return}
   if(pmx-pmn<10){const m=(pmx+pmn)/2;pmx=m+5;pmn=m-5}{const p=(pmx-pmn)*0.08;pmx+=p;pmn-=p}
   const yp=v=>T+PH*(1-(v-pmn)/(pmx-pmn));
-  let cmn=0,cmx=0;for(const r of cl)if(r.t>=live){cmn=Math.min(cmn,r.net,r.sn,r.pn,r.ix);cmx=Math.max(cmx,r.net,r.sn,r.pn,r.ix)}
-  if(cmx-cmn<1){cmx+=1;cmn-=1}{const p=(cmx-cmn)*0.08;cmx+=p;cmn-=p}
-  const yc=v=>CT+CH*(1-(v-cmn)/(cmx-cmn));
+  const cvds=[];for(const r of cl)if(r.t>=Math.max(live,x0)&&r.t<=x1)cvds.push(r.net,r.sn,r.pn,r.ix);
+  const cr=S15.robustRange(cvds,{include0:1,minSpan:1}),cmn=cr.mn,cmx=cr.mx;
+  const yc=v=>CT+CH*(1-(Math.max(cmn,Math.min(cmx,v))-cmn)/Math.max(cmx-cmn,1));
   // shading: pre-open context, settlement window, no-trade-data region
   g.fillStyle='#ffffff08';g.fillRect(xs(x0),T,xs(M.open)-xs(x0),Hh-34-T);
   g.fillStyle='#f7931a1c';g.fillRect(xs(M.settle),T,xs(M.close)-xs(M.settle),Hh-34-T);
@@ -1020,7 +1047,7 @@ function suChart(){const x=suX;if(!x)return;const {Sr,now,H,inc,K}=x,g=suG;
     if(lab){g.fillStyle=col;g.textAlign=top?'right':'center';g.textBaseline='top';g.fillText(lab,top?X-3:X,top?T+2:Hh-28)}};
   const hm=t=>new Date(t*1000).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}).replace(/\s?[AP]M/,'');
   for(let t=x0;t<=x1;t+=300)if(t!==M.open&&t!==M.close)vline(t,'#1f2733',hm(t));
-  vline(M.open,'#8592a3','open '+hm(M.open),[4,3]);vline(M.settle,'#f7931a','settlement 60s →',[4,3],1);vline(M.close,'#8592a3','close '+hm(M.close),[4,3]);vline(now,'#e8edf355','');
+  if(M.open>=x0&&M.open<=x1)vline(M.open,'#8592a3','open '+hm(M.open),[4,3]);if(M.settle>=x0&&M.settle<=x1)vline(M.settle,'#f7931a','settlement 60s →',[4,3],1);if(M.close>=x0&&M.close<=x1)vline(M.close,'#8592a3','close '+hm(M.close),[4,3]);vline(now,'#e8edf355','now');if(M.close>x1){g.fillStyle='#8592a3';g.textAlign='right';g.textBaseline='top';g.fillText('close '+hm(M.close)+' · '+mmss(M.close-now)+' left',W-R,Hh-28)}
   // strike
   if(K){const y=yp(K);g.strokeStyle='#ffd166';g.lineWidth=1.4;g.setLineDash([6,4]);g.beginPath();g.moveTo(L,y);g.lineTo(W-R,y);g.stroke();g.setLineDash([]);
     g.fillStyle='#ffd166';g.textAlign='left';g.textBaseline='bottom';g.fillText('Strike $'+K.toLocaleString('en-US',{maximumFractionDigits:2})+' · '+(KS.src||''),L+4,y-2)}
@@ -1028,16 +1055,20 @@ function suChart(){const x=suX;if(!x)return;const {Sr,now,H,inc,K}=x,g=suG;
   line('px',yp,'#e8edf3aa',1.2);line('bp',yp,'#f7931a',2);
   line('ix',yc,'#e8edf380',1.1,live);line('sn',yc,'#5aa9ff',1.2,live);line('pn',yc,'#b18cff',1.2,live);line('net',yc,'#18c784',2.2,live);
   // CVD Δ bars per bucket (same windows as the table) with Δ BTC diamonds on a shared ± scale
-  const mid=BT+BH/2,bm=Math.max(1,...buckets.map(b=>Math.abs(b.net))),dm=Math.max(1,...buckets.map(b=>Math.abs(b.dp||0)));
+  const mid=BT+BH/2,br=S15.robustRange(buckets.map(b=>b.net),{include0:1,minSpan:1}),bm=Math.max(1,Math.abs(br.mx),Math.abs(br.mn));
+  const dm=Math.max(1,...buckets.map(b=>Math.abs(b.dp||0)));
   g.strokeStyle='#1f2733';g.beginPath();g.moveTo(L,mid);g.lineTo(W-R,mid);g.stroke();
-  for(const b of buckets){const a=Math.max(b.a,x0),X0=xs(a)+1,X1=xs(b.b)-1,w=Math.max(1,X1-X0),h=(BH/2-3)*Math.abs(b.net)/bm;
+  for(const b of buckets){if(b.b<=x0||b.a>=x1)continue;const a=Math.max(b.a,x0),X0=xs(a)+1,X1=xs(Math.min(b.b,x1))-1,w=Math.max(1,X1-X0);
+    const clipped=Math.abs(b.net)>bm*1.01,h=(BH/2-3)*Math.min(1,Math.abs(b.net)/bm);
     g.fillStyle=b.partial?'#8592a366':b.net>=0?'#18c784':'#f0434f';if(stale&&b.b>now-SU_CFG.staleSec)g.fillStyle='#8592a3';
     g.fillRect(X0,b.net>=0?mid-h:mid,w,h);
     if(b.b===now){g.strokeStyle='#e8edf3';g.strokeRect(X0-.5,BT,w+1,BH)}
     if(b.dp!=null){const X=(X0+X1)/2,Y=mid-(BH/2-3)*b.dp/dm;g.fillStyle=b.dp>=0?'#c9ffe6':'#ffd0d4';g.beginPath();g.moveTo(X,Y-4);g.lineTo(X+4,Y);g.lineTo(X,Y+4);g.lineTo(X-4,Y);g.fill()}
-    if(w>=30&&b.dp!=null&&!b.partial){g.fillStyle='#8592a3';g.textAlign='center';g.textBaseline=b.net>=0?'top':'bottom';g.fillText((b.dp>=0?'+':'−')+'$'+Math.abs(b.dp).toFixed(0),(X0+X1)/2,b.net>=0?mid+2:mid-2)}}
-  g.fillStyle='#8592a3';g.textAlign='right';g.textBaseline='middle';g.fillText('Δ '+fmt(bm,false),L-6,BT+6);g.fillText((suLen<60?suLen+'s':suLen/60+'m')+' bkts',L-6,mid);
+    if(w>=30&&!b.partial){g.fillStyle='#8592a3';g.textAlign='center';g.textBaseline=b.net>=0?'top':'bottom';
+      const lab=clipped?fmt(b.net):(b.dp!=null?((b.dp>=0?'+':'−')+'$'+Math.abs(b.dp).toFixed(0)):'');if(lab)g.fillText(lab,(X0+X1)/2,b.net>=0?mid+2:mid-2)}}
+  g.fillStyle='#8592a3';g.textAlign='right';g.textBaseline='middle';g.fillText('Δ '+fmt(bm,false)+(cr.clipped||br.clipped?' *':''),L-6,BT+6);g.fillText((suLen<60?suLen+'s':suLen/60+'m')+' bkts',L-6,mid);
   g.textAlign='left';g.fillText('◆ ±$'+dm.toFixed(0),W-R+6,BT+6);
+  if(cr.clipped||br.clipped){g.fillStyle='#8592a3';g.textAlign='left';g.textBaseline='top';g.fillText('scale clips a spike '+fmt(br.rawLo!=null&&Math.abs(br.rawLo)>Math.abs(br.rawHi||0)?br.rawLo:br.rawHi),L+4,BT+1)}
   if(stale){g.fillStyle='#f0434f';g.font='600 13px Inter,sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('STALE FEED · '+stTxt,(L+W-R)/2,CT+CH/2);g.font='11px Inter,sans-serif'}
   // hover
   if(suHover!=null&&suHover>=L&&suHover<=W-R){const t=Math.round(x0+(suHover-L)/(W-L-R)*(x1-x0)),r=cl[t-x0];g.strokeStyle='#8592a3';g.beginPath();g.moveTo(suHover,T);g.lineTo(suHover,Hh-30);g.stroke();
@@ -1094,7 +1125,8 @@ function suRender(x){const {Sr,now,H,inc,s1,s2,bars,sigma,idx,K,dist,left,trend,
   $('suInc').tBodies[0].innerHTML=inc.map(r=>`<tr><td>${r.len<60?r.len+'s':r.len/60+'m'}${r.full?'':' <span class="mute">*</span>'}</td><td class="${cls(r.dp||0)}">${usd(r.dp)}</td><td class="${cls(r.rel||0)}">${r.rel!=null?(r.rel>=0?'+':'−')+Math.abs(r.rel).toFixed(2)+'×':'<span class="mute">building</span>'}</td><td>${r.typ!=null?'$'+r.typ.toFixed(0):'—'}</td><td class="${cls(r.sn)}">${fmt(r.sn)}</td><td class="${cls(r.pn)}">${fmt(r.pn)}</td><td class="${cls(r.net)}"><b>${fmt(r.net)}</b></td><td class="${cls(r.ix)}">${fmt(r.ix||0)}</td><td class="hide-s mute">${r.bn}</td></tr>`).join('');
   const cl=S15.classify(s1,s2,act?d:0,SU_CFG);
   $('suSlices').innerHTML=`<b class="${cls(s1.dp||0)}">${usd(s1.dp)}</b> → <b class="${cls(s2.dp||0)}">${usd(s2.dp)}</b> · <b>${cl.label}</b> <span class="mute">· flow ${fmt(s1.net)} → ${fmt(s2.net)}</span>`;
-  $('suSliceWhy').textContent=`Last two 30s slices${act?' in the setup direction':''}: ${cl.why||'—'}. Meaningful delta ≥ ${fmt(SU_CFG.minDelta,false)} per slice.`;
+  const liveSec=order.length?now-order[0]:0,short=liveSec<300;
+  $('suSliceWhy').textContent=`Last two 30s slices${act?' in the setup direction':''}: ${cl.why||'—'}. Meaningful delta ≥ ${fmt(SU_CFG.minDelta,false)} per slice.`+(short?` CVD is from this page’s trades only (${liveSec}s so far); 3m/5m CVD will match 30s until more time has passed. Price before that uses Coinbase 1m candles.`:'');
   // strike & countdown
   $('suTk').textContent=(kal.ticker&&kal.win===KS.qs?kal.ticker:'no live Kalshi market')+'';
   $('suK').textContent=K?usdA(K)+' · '+KS.src:'missing';$('suK').className=KS.src==='Kalshi live'?'':'sell';
