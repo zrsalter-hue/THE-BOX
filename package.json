@@ -1,6 +1,0 @@
-{
-  "name": "btc-cvd-watch",
-  "private": true,
-  "description": "THE BOX static site (gh-pages). No build step.",
-  "scripts": { "test": "node --test" }
-}
