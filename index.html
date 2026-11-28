@@ -45,7 +45,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .div{margin-top:12px;padding:10px 12px;border-radius:8px;background:#161c25;font-size:14px}
 .fig{position:relative;height:clamp(300px,42vh,460px)}
 .fig canvas{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair}
-#tip,.tip{position:absolute;pointer-events:none;background:#0a0d12ee;border:1px solid var(--line);border-radius:6px;padding:6px 9px;font-size:12px;display:none;white-space:nowrap}
+#tip{position:absolute;pointer-events:none;background:#0a0d12ee;border:1px solid var(--line);border-radius:6px;padding:6px 9px;font-size:12px;display:none;white-space:nowrap}
 .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--mute)}
 .legend span::before{content:"";display:inline-block;width:14px;height:3px;margin-right:6px;vertical-align:3px;background:var(--c)}
 .tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:14px}
@@ -115,9 +115,6 @@ details{margin-top:12px}summary{cursor:pointer;color:var(--mute);font-size:14px;
 #suSlices{font-size:15px;margin-top:8px;padding:8px 10px;border-radius:8px;background:#161c25}
 #suStrike{font-size:13.5px;gap:4px 12px}
 #suFin{font-size:13.5px}
-.sufig{height:clamp(320px,41vh,500px);margin-top:6px}
-.such{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px}
-.such h3{margin:0;font:600 13px Inter,sans-serif;color:var(--ink)}
 .sug2{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:18px;margin-top:14px;align-items:start}
 @media(max-width:1100px){.sug{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 @media(max-width:900px){.sug,.sug2{grid-template-columns:minmax(0,1fr)}}
@@ -142,8 +139,8 @@ details{margin-top:12px}summary{cursor:pointer;color:var(--mute);font-size:14px;
       <div id="suFlags"></div>
     </div>
     <div>
-      <div class="mute" style="font-size:12px;margin-bottom:4px">Increments · price change, × typical move (rolling median of prior completed intervals), CVD Δ (taker buy − sell) over the same window</div>
-      <table id="suInc"><thead><tr><th>Window</th><th>Δ BTC</th><th>× typical</th><th>Typical |Δ|</th><th>Spot CVD Δ</th><th>Perp CVD Δ</th><th>CVD Δ</th><th title="Coinbase + Kraken + Bitstamp, the 3 BRTI-estimate venues">Index CVD Δ</th><th class="hide-s">Base n</th></tr></thead><tbody></tbody></table>
+      <div class="mute" style="font-size:12px;margin-bottom:4px">Increments · price change, × typical move (rolling median of prior completed intervals), taker net delta</div>
+      <table id="suInc"><thead><tr><th>Window</th><th>Δ BTC</th><th>× typical</th><th>Typical |Δ|</th><th>Spot net</th><th>Perp net</th><th>Total net</th><th class="hide-s">Base n</th></tr></thead><tbody></tbody></table>
       <div id="suSlices">—</div>
       <div class="mute" style="font-size:12px;margin-top:6px" id="suSliceWhy"></div>
     </div>
@@ -163,11 +160,6 @@ details{margin-top:12px}summary{cursor:pointer;color:var(--mute);font-size:14px;
       <div class="div" id="suFin">Settlement window opens in the final 60 seconds.</div>
     </div>
   </div>
-  <div class="such"><h3>Price, strike &amp; CVD · current 15‑min window · bars on the increment grid</h3>
-    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span id="suCvSt" class="mute" style="font-size:12px">waiting for trades</span>
-    <div class="seg" id="suBk"><button data-m="30">30s</button><button data-m="60" class="on">1m</button><button data-m="180">3m</button><button data-m="300">5m</button></div></div></div>
-  <div class="fig sufig" id="suFig"><canvas id="suCv"></canvas><div id="suTip" class="tip"></div></div>
-  <div class="legend" style="margin-top:6px"><span style="--c:#e8edf3">Price (trade tape)</span><span style="--c:var(--btc)">BRTI estimate (3‑venue median)</span><span style="--c:#ffd166">Strike</span><span style="--c:#18c784">CVD all venues</span><span style="--c:var(--spot)">Spot CVD</span><span style="--c:var(--perp)">Perp CVD</span><span style="--c:#e8edf3;opacity:.6">Index‑venue CVD (CB+KRK+BST)</span><span>Bars: CVD Δ per bucket, ◆ = Δ BTC in the same bucket · buckets end at now, the same windows as the increment table (rightmost bar = table row) · CVD rebased to 0 at window open · grey = before this page had trade data</span></div>
   <div class="sug2">
     <div><div class="mute" style="font-size:12px;margin-bottom:4px">Setup state machines (both directions run independently)</div>
       <table id="suMach"><thead><tr><th>Side</th><th>State</th><th>Frozen level</th><th>Leg extreme</th><th>Retest</th><th>Spot / perp since break</th><th>Grade</th><th>Age</th></tr></thead><tbody></tbody></table></div>
@@ -185,14 +177,6 @@ details{margin-top:12px}summary{cursor:pointer;color:var(--mute);font-size:14px;
     <div style="display:flex;gap:8px;margin-top:8px"><button type="button" class="tag" id="suCfgReset" style="background:none;color:var(--mute);cursor:pointer;min-height:36px">Reset to defaults</button></div>
     <div class="note">Spot/perp nets are taker buy $ − sell $ across this page's venues. Typical move = median |Δprice| of the last N completed, non‑overlapping intervals of the same length; the current interval is excluded. Until the page has its own history, 1m/3m/5m baselines are seeded from Coinbase 1‑minute candles. Swing levels and the settlement window use the BRTI estimate (median of Coinbase, Kraken, Bitstamp).</div>
   </details>
-</section>
-
-<section class="card" style="margin-bottom:14px">
-  <div class="head"><h2>Cumulative volume delta vs price</h2>
-    <div class="seg" id="cwin"><button data-m="5">5m</button><button data-m="15" class="on">15m</button><button data-m="60">1h</button><button data-m="240">4h</button></div>
-  </div>
-  <div class="fig" id="fig"><canvas id="cv"></canvas><div id="tip"></div></div>
-  <div class="legend" style="margin-top:8px"><span style="--c:var(--btc)">CVD all venues</span><span style="--c:var(--spot)">Spot CVD</span><span style="--c:var(--perp)">Perp CVD</span><span style="--c:#8592a3">Price (right axis)</span><span>Bars: CVD Δ per bucket on the setup increment grid (30s for 5m/15m, 1m for 1h, 5m for 4h; buckets end at now) · dashed gold = strike · CVD rebased to 0 at left edge</span></div>
 </section>
 
 <section class="card" id="edgeCard">
@@ -299,6 +283,13 @@ details{margin-top:12px}summary{cursor:pointer;color:var(--mute);font-size:14px;
   </section>
 </div>
 
+<section class="card" style="margin-bottom:14px">
+  <div class="head"><h2>Cumulative volume delta vs price</h2>
+    <div class="seg" id="cwin"><button data-m="5">5m</button><button data-m="15" class="on">15m</button><button data-m="60">1h</button><button data-m="240">4h</button></div>
+  </div>
+  <div class="fig" id="fig"><canvas id="cv"></canvas><div id="tip"></div></div>
+  <div class="legend" style="margin-top:8px"><span style="--c:var(--btc)">CVD all venues</span><span style="--c:var(--spot)">Spot CVD</span><span style="--c:var(--perp)">Perp CVD</span><span style="--c:#8592a3">Price (right axis)</span><span>Bars: net delta per slice · CVD rebased to 0 at left edge</span></div>
+</section>
 
 <section class="card" style="margin-bottom:14px">
   <div class="head"><h2>Absorption · is the flow moving price?</h2>
@@ -520,10 +511,10 @@ function renderQuarter(){
 }
 
 // ---------- chart ----------
-const cv=$('cv'),ctx=cv.getContext('2d'),fig=$('fig'),tip=$('tip');let series=[],hoverX=null,mainMarks=null;
+const cv=$('cv'),ctx=cv.getContext('2d'),fig=$('fig'),tip=$('tip');let series=[],hoverX=null;
 function build(){
   const end=nowS(),start=Math.max(end-cwin*60+1,order.length?order[0]:end);series=[];let c=0,sp=0,pp=0,lastPx=0;
-  for(let t=start;t<=end;t++){const b=B.get(t);if(b){c+=b.b-b.s;sp+=b.sb-b.ss;pp+=b.pb-b.ps;lastPx=b.px}series.push({t,c,sp,pp,px:lastPx||null,d:b?b.b-b.s:0,dsn:b?b.sb-b.ss:0,dpn:b?b.pb-b.ps:0,has:!!b})}
+  for(let t=start;t<=end;t++){const b=B.get(t);if(b){c+=b.b-b.s;sp+=b.sb-b.ss;pp+=b.pb-b.ps;lastPx=b.px}series.push({t,c,sp,pp,px:lastPx||null,d:b?b.b-b.s:0})}
 }
 function draw(){
   const W=fig.clientWidth,H=fig.clientHeight,dpr=window.devicePixelRatio||1;
@@ -552,18 +543,12 @@ function draw(){
     series.forEach((s,i)=>{const v=s[key];if(v==null)return;const x=xs(i),y=yf(v);on?ctx.lineTo(x,y):ctx.moveTo(x,y);on=true});ctx.stroke();ctx.setLineDash([])};
   line('px',yp,'#5d6b7d',1.2,[4,3]);line('sp',ys,'#5aa9ff',1.2);line('pp',ys,'#b18cff',1.2);line('c',ys,'#f7931a',2.4);
   // delta bars
-  // delta bars on the Setup15 increment grid: buckets (end − k·len, end − (k−1)·len], same windows as the setup table
-  const t0=series[0].t,tN=series[N-1].t,bl=cwin<=15?30:cwin<=60?60:300,S15m=window.Setup15;
-  const rows=series.filter(s=>s.has).map(s=>({t:s.t,px:s.px,sn:s.dsn,pn:s.dpn}));
-  const bk=S15m.cvdBuckets(rows,tN,bl,Math.ceil(N/bl),order.length?order[0]:tN).filter(b=>b.b>t0);
-  const bm=Math.max(1,...bk.map(b=>Math.abs(b.net))),mid=BT+BH/2,xt=t=>xs(Math.max(0,t-t0));
+  const slices=W<520?40:80,per=Math.max(1,Math.ceil(N/slices)),bars=[];
+  for(let i=0;i<N;i+=per){let d=0;for(let j=i;j<Math.min(i+per,N);j++)d+=series[j].d;bars.push([i,d])}
+  const bm=Math.max(1,...bars.map(b=>Math.abs(b[1]))),mid=BT+BH/2,bw=Math.max(1,(W-L-R)/bars.length-1.5);
   ctx.strokeStyle='#1f2733';ctx.beginPath();ctx.moveTo(L,mid);ctx.lineTo(W-R,mid);ctx.stroke();
-  for(const b of bk){const h=(BH/2-2)*Math.abs(b.net)/bm,X0=xt(Math.max(b.a,t0-1)+1),w=Math.max(1,xt(b.b)-X0-1);ctx.fillStyle=b.partial?'#8592a366':b.net>=0?'#18c784':'#f0434f';ctx.fillRect(X0,b.net>=0?mid-h:mid,w,h)}
-  ctx.textAlign='right';ctx.textBaseline='middle';ctx.fillStyle='#8592a3';ctx.fillText('Δ '+fmt(bm,false),L-6,BT+6);ctx.fillText((bl<60?bl+'s':bl/60+'m')+' bkts',L-6,mid);
-  // 15-minute market window and strike
-  if(mainMarks){const m=mainMarks,vl=(t,col,lab)=>{if(t<t0||t>tN)return;const X=xt(t);ctx.strokeStyle=col;ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(X,T);ctx.lineTo(X,H-22);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle=col;ctx.textAlign='left';ctx.textBaseline='top';ctx.fillText(lab,X+3,T+2)};
-    vl(m.open,'#8592a3','15m open');vl(m.settle,'#f7931a','settle 60s');
-    if(m.K&&m.K>=pmn&&m.K<=pmx){const y=yp(m.K);ctx.strokeStyle='#ffd166';ctx.setLineDash([6,4]);ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(W-R,y);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#ffd166';ctx.textAlign='right';ctx.textBaseline='bottom';ctx.fillText('Strike $'+m.K.toLocaleString('en-US',{maximumFractionDigits:2}),W-R-4,y-2)}}
+  for(const [i,d] of bars){const h=(BH/2-2)*Math.abs(d)/bm;ctx.fillStyle=d>=0?'#18c784':'#f0434f';ctx.fillRect(xs(i),d>=0?mid-h:mid,bw,h)}
+  ctx.textAlign='right';ctx.textBaseline='middle';ctx.fillStyle='#8592a3';ctx.fillText('Δ '+fmt(bm,false),L-6,BT+6);
   // signal markers
   if(N){const t0=series[0].t;for(const g of sigLog){const i=Math.floor(g.t/1000)-t0;if(i<0||i>=N)continue;const x=xs(i),up=g.side>0,y=up?T+LH-4:T+12;
     ctx.fillStyle=up?'#18c784':'#f0434f';ctx.beginPath();if(up){ctx.moveTo(x,y-12);ctx.lineTo(x-7,y);ctx.lineTo(x+7,y)}else{ctx.moveTo(x,y+12);ctx.lineTo(x-7,y);ctx.lineTo(x+7,y)}ctx.fill()}}
@@ -941,12 +926,10 @@ function suBars(now){const m=new Map();for(const c of suCbC)m.set(c.t,{...c,src:
     if(n>=45)m.set(t0,{t:t0,o,h,l,c,src:'live'})}
   return [...m.values()].sort((a,b)=>a.t-b.t).filter(c=>c.t>now-7200)}
 // per-second rows for increments: this page's trade buckets, seeded with Coinbase 1m closes before the page opened
-// ix = net taker $ on the 3 BRTI-estimate venues (Coinbase, Kraken, Bitstamp)
-function tradeRows(from){const rows=[];for(const t of order){if(t<from)continue;const b=B.get(t);let ix=0;for(const id of ['cb','krk','bst']){const x=b.ex[id];if(x)ix+=x[0]-x[1]}
-  rows.push({t,px:b.px,sn:b.sb-b.ss,pn:b.pb-b.ps,ix})}return rows}
 function suSeries(now){const rows=[],from=now-(SU_CFG.baseN+2)*300,first=order.length?order[0]:now;
-  for(const c of suCbC)if(c.t+59<first&&c.t+59>=from)rows.push({t:c.t+59,px:c.c,sn:0,pn:0,ix:0});
-  return rows.concat(tradeRows(from))}
+  for(const c of suCbC)if(c.t+59<first&&c.t+59>=from)rows.push({t:c.t+59,px:c.c,sn:0,pn:0});
+  for(const t of order){if(t<from)continue;const b=B.get(t);rows.push({t,px:b.px,sn:b.sb-b.ss,pn:b.pb-b.ps})}
+  return rows}
 function suVenue(from){const o={};for(let i=order.length-1;i>=0&&order[i]>from;i--){const x=B.get(order[i]);for(const k in x.ex){const y=o[k]||(o[k]=0);o[k]=y+x.ex[k][0]-x.ex[k][1]}}return o}
 function suHealth(nowMs){const age=e=>e.lt?(nowMs-e.lt)/1000:Infinity,st=SU_CFG.staleSec;
   const spot=EX.filter(e=>e.type==='spot'&&age(e)<st),perp=EX.filter(e=>e.type==='perp'&&age(e)<st),idx=['cb','krk','bst'].map(id=>EX.find(e=>e.id===id)).filter(e=>age(e)<st);
@@ -976,81 +959,7 @@ function suTick(){
       if(ev.kind!=='RETEST_PENDING'&&!ev.suppressed&&ok)suAlert(ev,txt)}
     if(r.events.length){saveLog();renderLog()}}
   suRender({Sr,now,nowMs,H,inc,s1,s2,bars,typ1m,sigma,idx,idxSrc,off,K,dist,left,closeS,trend,ok,Q});
-  suX={Sr,now,H,inc,K};suChart();{const m=S15.windowMarks(KS.qs,KS.close);mainMarks={K,open:m.open,settle:m.settle}}
 }
-// ---------- Setup chart: price/BRTI estimate/strike + CVD + CVD Δ bars on the Setup15 increment grid ----------
-let suX=null,suLen=60,suHover=null;
-const suCv=$('suCv'),suG=suCv.getContext('2d'),suFig=$('suFig'),suTip=$('suTip');
-function suChart(){const x=suX;if(!x)return;const {Sr,now,H,inc,K}=x,g=suG;
-  const W=suFig.clientWidth,Hh=suFig.clientHeight,dpr=window.devicePixelRatio||1;if(!W||!Hh)return;
-  if(suCv.width!==W*dpr||suCv.height!==Hh*dpr){suCv.width=W*dpr;suCv.height=Hh*dpr}
-  g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,Hh);g.font='11px Inter,sans-serif';
-  const M=S15.windowMarks(KS.qs,KS.close),x0=M.open-300,x1=M.close,live=order.length?order[0]:now;
-  const L=66,R=74,T=8,PH=(Hh-34)*0.42,CT=T+PH+10,CH=(Hh-34)*0.30,BT=CT+CH+10,BH=Hh-34-PH-CH-20;
-  const xs=t=>L+(W-L-R)*(t-x0)/(x1-x0);
-  // series: per-second CVD from x0, rebased to 0 at the window open; price from the trade tape; BRTI estimate per second
-  const Lc=S15.cvdLine(Sr,x0,now),z=Lc[Math.min(Lc.length-1,M.open-x0)]||{net:0,sn:0,pn:0,ix:0};
-  const cl=Lc.map(r=>({t:r.t,px:r.px,net:r.net-z.net,sn:r.sn-z.sn,pn:r.pn-z.pn,ix:r.ix-z.ix,bp:prox.get(r.t)||null}));
-  const buckets=S15.cvdBuckets(Sr,now,suLen,Math.ceil((now-x0)/suLen),live).filter(b=>b.b>x0);
-  const typ=(inc.find(r=>r.len===suLen)||{}).typ;
-  // stale state: same rules the module uses to suppress alerts
-  const stale=!(H.lastTrade<SU_CFG.staleSec)||!H.spot.length,stTxt=`${H.spot.length} spot · ${H.perp.length} perp · ${H.idx.length}/3 index venues fresh · last trade ${isFinite(H.lastTrade)?H.lastTrade.toFixed(1)+'s':'never'} ago`;
-  const st=$('suCvSt');st.textContent=(stale?'STALE · ':'')+stTxt;st.className=stale?'sell':'mute';
-  // ranges
-  let pmn=Infinity,pmx=-Infinity;for(const r of cl){for(const v of [r.px,r.bp])if(v){pmn=Math.min(pmn,v);pmx=Math.max(pmx,v)}}
-  if(K){pmn=Math.min(pmn,K);pmx=Math.max(pmx,K)}
-  if(pmn===Infinity){g.fillStyle='#8592a3';g.fillText('Waiting for trades…',L+10,T+20);return}
-  if(pmx-pmn<10){const m=(pmx+pmn)/2;pmx=m+5;pmn=m-5}{const p=(pmx-pmn)*0.08;pmx+=p;pmn-=p}
-  const yp=v=>T+PH*(1-(v-pmn)/(pmx-pmn));
-  let cmn=0,cmx=0;for(const r of cl)if(r.t>=live){cmn=Math.min(cmn,r.net,r.sn,r.pn,r.ix);cmx=Math.max(cmx,r.net,r.sn,r.pn,r.ix)}
-  if(cmx-cmn<1){cmx+=1;cmn-=1}{const p=(cmx-cmn)*0.08;cmx+=p;cmn-=p}
-  const yc=v=>CT+CH*(1-(v-cmn)/(cmx-cmn));
-  // shading: pre-open context, settlement window, no-trade-data region
-  g.fillStyle='#ffffff08';g.fillRect(xs(x0),T,xs(M.open)-xs(x0),Hh-34-T);
-  g.fillStyle='#f7931a1c';g.fillRect(xs(M.settle),T,xs(M.close)-xs(M.settle),Hh-34-T);
-  if(live>x0){g.fillStyle='#8592a322';const e=Math.min(xs(live),xs(now));g.fillRect(xs(x0),CT,e-xs(x0),Hh-34-CT)}
-  // grids + axes
-  g.strokeStyle='#1f2733';g.lineWidth=1;g.textBaseline='middle';g.fillStyle='#8592a3';
-  for(let k=0;k<=3;k++){const y=T+PH*k/3;g.beginPath();g.moveTo(L,y);g.lineTo(W-R,y);g.stroke();g.textAlign='left';g.fillText('$'+Math.round(pmx-(pmx-pmn)*k/3).toLocaleString(),W-R+6,y)}
-  for(let k=0;k<=2;k++){const y=CT+CH*k/2;g.beginPath();g.moveTo(L,y);g.lineTo(W-R,y);g.stroke();g.textAlign='right';g.fillText(fmt(cmx-(cmx-cmn)*k/2),L-6,y)}
-  g.setLineDash([3,3]);g.strokeStyle='#3a4655';g.beginPath();g.moveTo(L,yc(0));g.lineTo(W-R,yc(0));g.stroke();g.setLineDash([]);
-  g.textAlign='left';g.fillStyle='#8592a3';g.fillText('CVD since open',L+4,CT+8);g.fillText('Price',L+4,T+8);
-  // vertical marks: open, settlement window, close, now
-  const vline=(t,col,lab,dash,top)=>{const X=xs(t);g.strokeStyle=col;g.setLineDash(dash||[]);g.beginPath();g.moveTo(X,T);g.lineTo(X,Hh-30);g.stroke();g.setLineDash([]);
-    if(lab){g.fillStyle=col;g.textAlign=top?'right':'center';g.textBaseline='top';g.fillText(lab,top?X-3:X,top?T+2:Hh-28)}};
-  const hm=t=>new Date(t*1000).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}).replace(/\s?[AP]M/,'');
-  for(let t=x0;t<=x1;t+=300)if(t!==M.open&&t!==M.close)vline(t,'#1f2733',hm(t));
-  vline(M.open,'#8592a3','open '+hm(M.open),[4,3]);vline(M.settle,'#f7931a','settlement 60s →',[4,3],1);vline(M.close,'#8592a3','close '+hm(M.close),[4,3]);vline(now,'#e8edf355','');
-  // strike
-  if(K){const y=yp(K);g.strokeStyle='#ffd166';g.lineWidth=1.4;g.setLineDash([6,4]);g.beginPath();g.moveTo(L,y);g.lineTo(W-R,y);g.stroke();g.setLineDash([]);
-    g.fillStyle='#ffd166';g.textAlign='left';g.textBaseline='bottom';g.fillText('Strike $'+K.toLocaleString('en-US',{maximumFractionDigits:2})+' · '+(KS.src||''),L+4,y-2)}
-  const line=(key,yf,col,w,from)=>{g.strokeStyle=col;g.lineWidth=w;g.beginPath();let on=false;for(const r of cl){const v=r[key];if(v==null||r.t<(from||x0)){on=false;continue}const X=xs(r.t),Y=yf(v);on?g.lineTo(X,Y):g.moveTo(X,Y);on=true}g.stroke()};
-  line('px',yp,'#e8edf3aa',1.2);line('bp',yp,'#f7931a',2);
-  line('ix',yc,'#e8edf380',1.1,live);line('sn',yc,'#5aa9ff',1.2,live);line('pn',yc,'#b18cff',1.2,live);line('net',yc,'#18c784',2.2,live);
-  // CVD Δ bars per bucket (same windows as the table) with Δ BTC diamonds on a shared ± scale
-  const mid=BT+BH/2,bm=Math.max(1,...buckets.map(b=>Math.abs(b.net))),dm=Math.max(1,...buckets.map(b=>Math.abs(b.dp||0)));
-  g.strokeStyle='#1f2733';g.beginPath();g.moveTo(L,mid);g.lineTo(W-R,mid);g.stroke();
-  for(const b of buckets){const a=Math.max(b.a,x0),X0=xs(a)+1,X1=xs(b.b)-1,w=Math.max(1,X1-X0),h=(BH/2-3)*Math.abs(b.net)/bm;
-    g.fillStyle=b.partial?'#8592a366':b.net>=0?'#18c784':'#f0434f';if(stale&&b.b>now-SU_CFG.staleSec)g.fillStyle='#8592a3';
-    g.fillRect(X0,b.net>=0?mid-h:mid,w,h);
-    if(b.b===now){g.strokeStyle='#e8edf3';g.strokeRect(X0-.5,BT,w+1,BH)}
-    if(b.dp!=null){const X=(X0+X1)/2,Y=mid-(BH/2-3)*b.dp/dm;g.fillStyle=b.dp>=0?'#c9ffe6':'#ffd0d4';g.beginPath();g.moveTo(X,Y-4);g.lineTo(X+4,Y);g.lineTo(X,Y+4);g.lineTo(X-4,Y);g.fill()}
-    if(w>=30&&b.dp!=null&&!b.partial){g.fillStyle='#8592a3';g.textAlign='center';g.textBaseline=b.net>=0?'top':'bottom';g.fillText((b.dp>=0?'+':'−')+'$'+Math.abs(b.dp).toFixed(0),(X0+X1)/2,b.net>=0?mid+2:mid-2)}}
-  g.fillStyle='#8592a3';g.textAlign='right';g.textBaseline='middle';g.fillText('Δ '+fmt(bm,false),L-6,BT+6);g.fillText((suLen<60?suLen+'s':suLen/60+'m')+' bkts',L-6,mid);
-  g.textAlign='left';g.fillText('◆ ±$'+dm.toFixed(0),W-R+6,BT+6);
-  if(stale){g.fillStyle='#f0434f';g.font='600 13px Inter,sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('STALE FEED · '+stTxt,(L+W-R)/2,CT+CH/2);g.font='11px Inter,sans-serif'}
-  // hover
-  if(suHover!=null&&suHover>=L&&suHover<=W-R){const t=Math.round(x0+(suHover-L)/(W-L-R)*(x1-x0)),r=cl[t-x0];g.strokeStyle='#8592a3';g.beginPath();g.moveTo(suHover,T);g.lineTo(suHover,Hh-30);g.stroke();
-    const b=buckets.find(b=>t>b.a&&t<=b.b),lines=[new Date(t*1000).toLocaleTimeString('en-US',{hour12:false})];
-    if(r){lines.push('Price '+pxFmt(r.px)+' · BRTI est '+(r.bp?pxFmt(r.bp):'—'));if(t>=live)lines.push('CVD since open '+fmt(r.net)+' (spot '+fmt(r.sn)+' · perp '+fmt(r.pn)+' · index '+fmt(r.ix)+')');else lines.push('No trade data yet at this second')}
-    if(b){const f=s=>new Date(s*1000).toLocaleTimeString('en-US',{hour12:false});lines.push(`Bucket (${f(b.a)}, ${f(b.b)}]${b.partial?' · partial':''}`);
-      lines.push('Δ BTC '+usd(b.dp)+(typ&&b.dp!=null?' · '+(b.dp/typ>=0?'+':'−')+Math.abs(b.dp/typ).toFixed(2)+'× typical':'')+' · CVD Δ '+fmt(b.net));lines.push('spot '+fmt(b.sn)+' · perp '+fmt(b.pn)+' · index '+fmt(b.ix))}
-    suTip.style.display='block';suTip.textContent='';for(const l of lines){const d=document.createElement('div');d.textContent=l;suTip.appendChild(d)}
-    suTip.style.left=Math.max(4,Math.min(suHover+12,W-suTip.offsetWidth-4))+'px';suTip.style.top='10px'}else suTip.style.display='none';
-}
-suCv.addEventListener('pointermove',e=>{suHover=e.offsetX;suChart()});suCv.addEventListener('pointerleave',()=>{suHover=null;suChart()});
-new ResizeObserver(()=>suChart()).observe(suFig);
-$('suBk').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;[...$('suBk').children].forEach(x=>x.classList.toggle('on',x===b));suLen=+b.dataset.m;suChart()});
 const span2=(Sr,a,b)=>S15.span(Sr,a,b);
 function suText(st,ev,ctx){const {s1,s2,K,idx,dist,left}=ctx,d=st.dir,lv=st.level!=null?usdA(st.level):'—',cls2=S15.classify(s1,s2,st.state==='IDLE'?0:d,SU_CFG);
   const L=[`${ev?ev.label:S15.label(st)} · ${mmss(left)} left`,
@@ -1068,7 +977,7 @@ function suWhy(st,ev){const d=st.dir,lv=st.level!=null?usdA(st.level):'(no confi
 function suRow(ev,st,inc,s1,s2,Q,K,idx,dist,left,sigma,f,spotAgree,H){const d=ev.dir,ask=d>0?Q.ya:Q.na,pB=S15.pBase(dist,sigma,left);
   const row={type:'setup',action:'SETUP',kind:ev.kind,label:ev.label,side:d>0?'up':'down',dir:d,t:ev.t*1000,ticker:kal.ticker||null,close:KS.close,K,idx,dist,left:Math.round(left),
     level:st.level??null,legX:st.legX??null,path:ev.kind==='RETEST_PENDING'?'retest_pending':st.retested?'retest':st.state==='BREAK'?'retest_pending':'',trigger:st.trigger||'',grade:st.grade||'',why:ev.why,
-    inc:Object.fromEntries(inc.map(x=>[x.len+'s',{dp:x.dp,rel:x.rel,spot:x.sn,perp:x.pn,cvd:x.net,idx:x.ix}])),slices:[s1.dp,s2.dp],accel:S15.classify(s1,s2,d,SU_CFG).label,
+    inc:Object.fromEntries(inc.map(x=>[x.len+'s',{dp:x.dp,rel:x.rel,spot:x.sn,perp:x.pn}])),slices:[s1.dp,s2.dp],accel:S15.classify(s1,s2,d,SU_CFG).label,
     flowSpot:f.sn,flowPerp:f.pn,spotAgree,absorbed:!!st.absorbed,suppressed:!!ev.suppressed,yesBid:Q.yb,yesAsk:Q.ya,noBid:Q.nb,noAsk:Q.na,px:ask,size:1,p:null,edge:null,pBase:pB,sigma,
     stale:{kalshi:!(H.bookAge<15),perp:!H.perp.length},result:null};
   row.text=suText(st,ev,{s1,s2,K,idx,dist,left});return row}
@@ -1091,7 +1000,7 @@ function suRender(x){const {Sr,now,H,inc,s1,s2,bars,sigma,idx,K,dist,left,trend,
   if(suLastAlert&&Date.now()-suLastAlert.t<120000)fl.push(`<span class="tag warn">Setup alert sent ${new Date(suLastAlert.t).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',second:'2-digit'})}</span>`);
   $('suFlags').innerHTML=fl.join('');
   // increments
-  $('suInc').tBodies[0].innerHTML=inc.map(r=>`<tr><td>${r.len<60?r.len+'s':r.len/60+'m'}${r.full?'':' <span class="mute">*</span>'}</td><td class="${cls(r.dp||0)}">${usd(r.dp)}</td><td class="${cls(r.rel||0)}">${r.rel!=null?(r.rel>=0?'+':'−')+Math.abs(r.rel).toFixed(2)+'×':'<span class="mute">building</span>'}</td><td>${r.typ!=null?'$'+r.typ.toFixed(0):'—'}</td><td class="${cls(r.sn)}">${fmt(r.sn)}</td><td class="${cls(r.pn)}">${fmt(r.pn)}</td><td class="${cls(r.net)}"><b>${fmt(r.net)}</b></td><td class="${cls(r.ix)}">${fmt(r.ix||0)}</td><td class="hide-s mute">${r.bn}</td></tr>`).join('');
+  $('suInc').tBodies[0].innerHTML=inc.map(r=>`<tr><td>${r.len<60?r.len+'s':r.len/60+'m'}${r.full?'':' <span class="mute">*</span>'}</td><td class="${cls(r.dp||0)}">${usd(r.dp)}</td><td class="${cls(r.rel||0)}">${r.rel!=null?(r.rel>=0?'+':'−')+Math.abs(r.rel).toFixed(2)+'×':'<span class="mute">building</span>'}</td><td>${r.typ!=null?'$'+r.typ.toFixed(0):'—'}</td><td class="${cls(r.sn)}">${fmt(r.sn)}</td><td class="${cls(r.pn)}">${fmt(r.pn)}</td><td class="${cls(r.net)}">${fmt(r.net)}</td><td class="hide-s mute">${r.bn}</td></tr>`).join('');
   const cl=S15.classify(s1,s2,act?d:0,SU_CFG);
   $('suSlices').innerHTML=`<b class="${cls(s1.dp||0)}">${usd(s1.dp)}</b> → <b class="${cls(s2.dp||0)}">${usd(s2.dp)}</b> · <b>${cl.label}</b> <span class="mute">· flow ${fmt(s1.net)} → ${fmt(s2.net)}</span>`;
   $('suSliceWhy').textContent=`Last two 30s slices${act?' in the setup direction':''}: ${cl.why||'—'}. Meaningful delta ≥ ${fmt(SU_CFG.minDelta,false)} per slice.`;
